@@ -25,6 +25,16 @@ lint-webapp:
 fix-webapp:
     cd webapp; npx @biomejs/biome check src/ --write
 
+build-native:
+    Set-Location '{{justfile_directory()}}\native'
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+    .\build.ps1
+
+build-native-debug:
+    Set-Location '{{justfile_directory()}}\native'
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+    npx @tauri-apps/cli build --debug
+
 lint:
     C:\Users\sandr\AppData\Local\Programs\Python\Python313\Scripts\ruff.exe check src/arr_mcp tests/
     C:\Users\sandr\AppData\Local\Programs\Python\Python313\Scripts\ruff.exe format src/arr_mcp tests/ --check

@@ -38,3 +38,8 @@ htmlcov/
 webapp/node_modules/
 webapp/dist/
 webapp/.vite/
+
+# Tauri
+native/target/
+native/gen/
+native/binaries/
