@@ -1,0 +1,27 @@
+[18:26:09] INFO     arr-mcp v0.3.0 starting                        server.py:85
+           INFO     Auto-discovering *arr services on default      server.py:86
+                    ports...                                                   
+[18:26:10] INFO     Radarr not configured — tools will be skipped server.py:143
+                    (port 7878 unreachable)                                    
+[18:26:11] INFO     Sonarr not configured — tools will be skipped server.py:143
+                    (port 8989 unreachable)                                    
+           INFO     Lidarr not configured — tools will be skipped server.py:143
+                    (port 8686 unreachable)                                    
+[18:26:12] INFO     Prowlarr not configured — tools will be       server.py:143
+                    skipped (port 9696 unreachable)                            
+           INFO     Readarr not configured — tools will be        server.py:143
+                    skipped (port 8787 unreachable)                            
+[18:26:13] INFO     Overseerr not configured — tools will be      server.py:143
+                    skipped (port 5055 unreachable)                            
+           INFO     Bazarr not configured — tools will be skipped server.py:143
+                    (port 6767 unreachable)                                    
+           INFO     Radarr not configured — skipping tools   radarr_tools.py:21
+           INFO     Sonarr not configured — skipping tools   sonarr_tools.py:15
+           INFO     Lidarr not configured — skipping tools   lidarr_tools.py:15
+           INFO     Prowlarr not configured — skipping     prowlarr_tools.py:15
+                    tools                                                      
+           INFO     Readarr not configured — skipping tools readarr_tools.py:15
+           INFO     Overseerr not configured — skipping   overseerr_tools.py:15
+                    tools                                                      
+           INFO     Bazarr not configured — skipping tools   bazarr_tools.py:20
+[18:26:14] INFO     Registered tools for 0/7 services             server.py:121

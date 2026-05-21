@@ -145,31 +145,18 @@ def _create_client(
 
 
 def _try_discover(name: str, port: int, client_cls, timeout: int):
-    import httpx
-
-    url = f"http://127.0.0.1:{port}"
-    try:
-        resp = httpx.get(f"{url}/api", timeout=3)
-        if resp.status_code == 200:
-            return client_cls(url, "", timeout)
-    except Exception:
-        logger.debug("%s auto-discovery failed on port %d", name, port)
-        pass
+    import socket
 
     try:
-        resp = httpx.get(f"{url}/api/v1/system/status", timeout=3)
-        if resp.status_code == 200:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(0.5)
+        result = sock.connect_ex(("127.0.0.1", port))
+        sock.close()
+        if result == 0:
+            url = f"http://127.0.0.1:{port}"
             return client_cls(url, "", timeout)
     except Exception:
-        logger.debug("%s auto-discovery failed on port %d", name, port)
-        pass
-
-    try:
-        resp = httpx.get(f"{url}/api/v3/system/status", timeout=3)
-        if resp.status_code == 200:
-            return client_cls(url, "", timeout)
-    except Exception:
-        logger.debug("%s auto-discovery failed on port %d", name, port)
+        logger.debug("%s auto-discovery: port %d not open", name, port)
         pass
 
     return None
