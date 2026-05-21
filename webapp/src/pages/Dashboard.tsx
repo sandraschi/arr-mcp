@@ -11,7 +11,7 @@ import {
 	XCircle,
 } from "lucide-react";
 import { useEffect, useState } from "react";
-import { type HealthResult, fetchHealth, fetchStats } from "../utils/api";
+import { type HealthResult, fetchHealth } from "../utils/api";
 
 interface ServiceCard {
 	key: string;
@@ -32,23 +32,34 @@ const services: ServiceCard[] = [
 
 export default function Dashboard() {
 	const [health, setHealth] = useState<Record<string, HealthResult> | null>(null);
-	const [stats, setStats] = useState<Record<string, Record<string, unknown>> | null>(null);
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
+	const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
 
 	useEffect(() => {
-		async function load() {
+		let mounted = true;
+
+		async function poll() {
 			try {
-				const [h, s] = await Promise.all([fetchHealth(), fetchStats("summary")]);
-				setHealth(h.data);
-				setStats(s.data);
+				const h = await fetchHealth();
+				if (mounted) {
+					setHealth(h.data);
+					setLastUpdate(new Date());
+					setError("");
+				}
 			} catch (e) {
-				setError(String(e));
+				if (mounted) setError(String(e));
 			} finally {
-				setLoading(false);
+				if (mounted) setLoading(false);
 			}
 		}
-		load();
+
+		poll();
+		const interval = setInterval(poll, 15000);
+		return () => {
+			mounted = false;
+			clearInterval(interval);
+		};
 	}, []);
 
 	if (loading) {
@@ -89,21 +100,6 @@ export default function Dashboard() {
 		);
 	}
 
-	if (error) {
-		return (
-			<div className="animate-fade-in">
-				<h2 className="text-2xl font-bold mb-6">Dashboard</h2>
-				<div className="bg-red-900/20 border border-red-800/40 rounded-xl p-6 text-red-400 flex items-center gap-3">
-					<AlertTriangle size={20} />
-					<div>
-						<p className="font-medium">Failed to load dashboard</p>
-						<p className="text-sm text-red-400/70 mt-1">{error}</p>
-					</div>
-				</div>
-			</div>
-		);
-	}
-
 	const reachableCount = Object.values(health || {}).filter((h) => h.reachable).length;
 	const totalCount = Object.keys(health || {}).length;
 
@@ -111,25 +107,31 @@ export default function Dashboard() {
 		<div className="animate-fade-in">
 			<div className="flex items-center justify-between mb-6">
 				<h2 className="text-2xl font-bold">Dashboard</h2>
-				<span className="text-sm text-zinc-400">
-					{reachableCount}/{totalCount} services reachable
-				</span>
+				<div className="flex items-center gap-3">
+					{error && (
+						<div className="flex items-center gap-1.5 text-xs text-red-400">
+							<AlertTriangle size={12} />
+							<span>Backend unreachable</span>
+						</div>
+					)}
+					<span className="text-xs text-zinc-500">
+						{reachableCount}/{totalCount} reachable
+						{lastUpdate && ` · updated ${lastUpdate.toLocaleTimeString()}`}
+					</span>
+				</div>
 			</div>
 
 			<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 				{services.map((svc) => {
 					const h = health?.[svc.key];
-					const s = stats?.[svc.key] as Record<string, unknown> | undefined;
 					const isReachable = h?.reachable;
-					const version = h?.version;
-
-					const colorVar = `var(--tw-${svc.color})`;
-					const dimVar = `var(--tw-${svc.color}-dim)`;
 
 					return (
 						<div
 							key={svc.key}
-							className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 hover:border-zinc-700 transition-colors"
+							className={`bg-zinc-900 border rounded-xl p-5 transition-colors ${
+								isReachable ? "border-zinc-700 hover:border-zinc-600" : "border-zinc-800 opacity-60"
+							}`}
 						>
 							<div className="flex items-center justify-between mb-3">
 								<div className="flex items-center gap-2.5">
@@ -143,13 +145,9 @@ export default function Dashboard() {
 								)}
 							</div>
 							{isReachable ? (
-								<div className="space-y-1 text-xs text-zinc-500">
-									{version && <p>v{version}</p>}
-									{s && s.wanted !== undefined && (
-										<p>
-											<span className="text-zinc-400">{String(s.wanted)}</span> wanted
-										</p>
-									)}
+								<div className="space-y-1 text-xs">
+									{h?.version && <p className="text-zinc-400">v{h.version}</p>}
+									<p className="text-green-500/70">Running</p>
 								</div>
 							) : (
 								<p className="text-xs text-zinc-600">{h?.reason || "not configured"}</p>
@@ -159,11 +157,11 @@ export default function Dashboard() {
 				})}
 			</div>
 
-			{stats && (
+			{health && Object.keys(health).length > 0 && (
 				<div className="mt-8">
-					<h3 className="text-lg font-semibold mb-4">Stack Summary</h3>
+					<h3 className="text-lg font-semibold mb-4">Health JSON</h3>
 					<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 overflow-x-auto">
-						<pre className="text-xs text-zinc-400 font-mono whitespace-pre">{JSON.stringify(stats, null, 2)}</pre>
+						<pre className="text-xs text-zinc-400 font-mono whitespace-pre">{JSON.stringify(health, null, 2)}</pre>
 					</div>
 				</div>
 			)}

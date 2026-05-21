@@ -140,7 +140,20 @@ def main() -> None:
 
     # ── Start server ─────────────────────────────────────────────
 
-    run_server(mcp, "arr-mcp")
+    async def build_health_data() -> dict[str, dict]:
+        result: dict[str, dict] = {}
+        for name, client in clients.items():
+            if client is None:
+                result[name.value] = {"reachable": False, "reason": "not configured"}
+                continue
+            try:
+                status = await client.health_check()
+                result[name.value] = {"reachable": True, "version": status.get("version")}
+            except Exception as e:
+                result[name.value] = {"reachable": False, "reason": str(e)}
+        return result
+
+    run_server(mcp, "arr-mcp", health_data_builder=build_health_data)
 
 
 if __name__ == "__main__":

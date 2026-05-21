@@ -1,0 +1,130 @@
+version: "3.8"
+
+services:
+  # ── Radarr (Movies) ──
+  radarr:
+    image: lscr.io/linuxserver/radarr:latest
+    container_name: radarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/radarr:/config
+      - ./data/movies:/movies
+      - ./data/downloads:/downloads
+    ports:
+      - 7878:7878
+    restart: unless-stopped
+
+  # ── Sonarr (TV Series) ──
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:latest
+    container_name: sonarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/sonarr:/config
+      - ./data/tv:/tv
+      - ./data/downloads:/downloads
+    ports:
+      - 8989:8989
+    restart: unless-stopped
+
+  # ── Lidarr (Music) ──
+  lidarr:
+    image: lscr.io/linuxserver/lidarr:latest
+    container_name: lidarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/lidarr:/config
+      - ./data/music:/music
+      - ./data/downloads:/downloads
+    ports:
+      - 8686:8686
+    restart: unless-stopped
+
+  # ── Prowlarr (Indexer Backbone) ──
+  prowlarr:
+    image: lscr.io/linuxserver/prowlarr:latest
+    container_name: prowlarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/prowlarr:/config
+    ports:
+      - 9696:9696
+    restart: unless-stopped
+
+  # ── Readarr (Books) ──
+  readarr:
+    image: lscr.io/linuxserver/readarr:develop
+    container_name: readarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/readarr:/config
+      - ./data/books:/books
+      - ./data/downloads:/downloads
+    ports:
+      - 8787:8787
+    restart: unless-stopped
+
+  # ── Overseerr (Media Requests & Discovery) ──
+  overseerr:
+    image: sctx/overseerr:latest
+    container_name: overseerr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/overseerr:/app/config
+    ports:
+      - 5055:5055
+    restart: unless-stopped
+
+  # ── Bazarr (Subtitles) ──
+  bazarr:
+    image: lscr.io/linuxserver/bazarr:latest
+    container_name: bazarr
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/bazarr:/config
+      - ./data/movies:/movies
+      - ./data/tv:/tv
+      - ./data/music:/music
+      - ./data/books:/books
+    ports:
+      - 6767:6767
+    restart: unless-stopped
+
+  # ── Jellyfin (Media Server, optional but recommended) ──
+  jellyfin:
+    image: lscr.io/linuxserver/jellyfin:latest
+    container_name: jellyfin
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Vienna
+    volumes:
+      - ./config/jellyfin:/config
+      - ./data/movies:/data/movies
+      - ./data/tv:/data/tv
+      - ./data/music:/data/music
+      - ./data/books:/data/books
+    ports:
+      - 8096:8096
+    restart: unless-stopped
