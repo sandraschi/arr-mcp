@@ -1,4 +1,18 @@
-import { BookOpen, Film, LayoutDashboard, Music, Puzzle, Search, Subtitles, Tv, UserCheck } from "lucide-react";
+import {
+	BookOpen,
+	Film,
+	HelpCircle,
+	LayoutDashboard,
+	MessageSquare,
+	Music,
+	Puzzle,
+	ScrollText,
+	Search,
+	Settings,
+	Subtitles,
+	Tv,
+	UserCheck,
+} from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navItems = [
@@ -11,6 +25,13 @@ const navItems = [
 	{ to: "/overseerr", icon: UserCheck, label: "Overseerr", color: "overseerr" },
 	{ to: "/bazarr", icon: Subtitles, label: "Bazarr", color: "bazarr" },
 	{ to: "/orchestrate", icon: Puzzle, label: "Orchestrate" },
+];
+
+const bottomItems = [
+	{ to: "/chat", icon: MessageSquare, label: "Chat" },
+	{ to: "/logger", icon: ScrollText, label: "Logger" },
+	{ to: "/help", icon: HelpCircle, label: "Help" },
+	{ to: "/settings", icon: Settings, label: "Settings" },
 ];
 
 const colorMap: Record<string, { bg: string; text: string; border: string }> = {
@@ -54,8 +75,27 @@ export default function Sidebar() {
 						</NavLink>
 					);
 				})}
+
+				<div className="mx-3 my-2 border-t border-zinc-800" />
+
+				{bottomItems.map((item) => (
+					<NavLink
+						key={item.to}
+						to={item.to}
+						className={({ isActive }) =>
+							`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-lg text-sm transition-colors ${
+								isActive
+									? "bg-zinc-800 text-zinc-100 font-medium"
+									: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800/50"
+							}`
+						}
+					>
+						<item.icon size={18} />
+						<span>{item.label}</span>
+					</NavLink>
+				))}
 			</nav>
-			<div className="p-4 border-t border-zinc-800 text-xs text-zinc-600">arr-mcp v0.1.0</div>
+			<div className="p-4 border-t border-zinc-800 text-xs text-zinc-600">arr-mcp v0.2.0</div>
 		</aside>
 	);
 }

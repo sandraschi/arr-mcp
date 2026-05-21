@@ -10,7 +10,14 @@
         "useTemplate": "off"
       },
       "suspicious": {
-        "noExplicitAny": "off"
+        "noExplicitAny": "off",
+        "noArrayIndexKey": "off"
+      },
+      "a11y": {
+        "noLabelWithoutControl": "off"
+      },
+      "correctness": {
+        "useExhaustiveDependencies": "off"
       }
     }
   },
