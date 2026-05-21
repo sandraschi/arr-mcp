@@ -44,6 +44,7 @@ class ArrConfig(BaseModel):
     lidarr: ArrServiceConfig = Field(default_factory=ArrServiceConfig)
     prowlarr: ArrServiceConfig = Field(default_factory=ArrServiceConfig)
     readarr: ArrServiceConfig = Field(default_factory=ArrServiceConfig)
+    overseerr: ArrServiceConfig = Field(default_factory=ArrServiceConfig)
     bazarr: ArrServiceConfig = Field(default_factory=ArrServiceConfig)
     jellyfin: JellyfinConfig = Field(default_factory=JellyfinConfig)
     transport: MCPTransportConfig = Field(default_factory=MCPTransportConfig)
@@ -93,6 +94,11 @@ class ArrConfig(BaseModel):
                 url=os.getenv("READARR_URL", ""),
                 api_key=os.getenv("READARR_API_KEY", ""),
                 enabled=os.getenv("READARR_ENABLED", "false").lower() == "true",
+            ),
+            overseerr=ArrServiceConfig(
+                url=os.getenv("OVERSEERR_URL", ""),
+                api_key=os.getenv("OVERSEERR_API_KEY", ""),
+                enabled=os.getenv("OVERSEERR_ENABLED", "false").lower() == "true",
             ),
             bazarr=ArrServiceConfig(
                 url=os.getenv("BAZARR_URL", ""),

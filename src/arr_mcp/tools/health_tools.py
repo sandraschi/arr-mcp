@@ -23,7 +23,7 @@ def register_health_tools(mcp, clients: dict) -> None:
     )
     async def arr_health(
         service: Annotated[
-            Literal["all", "radarr", "sonarr", "lidarr", "prowlarr", "readarr", "bazarr"],
+            Literal["all", "radarr", "sonarr", "lidarr", "prowlarr", "readarr", "overseerr", "bazarr"],
             Field(description="Which service to health-check, or 'all' for stack-wide probe."),
         ] = "all",
     ) -> dict:

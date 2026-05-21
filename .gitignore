@@ -33,3 +33,8 @@ htmlcov/
 
 # Env
 .env
+
+# Node
+webapp/node_modules/
+webapp/dist/
+webapp/.vite/

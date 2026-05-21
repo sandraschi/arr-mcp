@@ -29,6 +29,7 @@ uv run arr-mcp
 | Lidarr (Music) | 8686 | `LIDARR_` |
 | Prowlarr (Indexers) | 9696 | `PROWLARR_` |
 | Readarr (Books) | 8787 | `READARR_` |
+| Overseerr (Requests) | 5055 | `OVERSEERR_` |
 | Bazarr (Subtitles) | 6767 | `BAZARR_` |
 
 ## Cross-Arr Orchestration

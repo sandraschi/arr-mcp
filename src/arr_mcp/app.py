@@ -60,12 +60,13 @@ def create_mcp(config: ArrConfig) -> FastMCP:
     async def lifespan(mcp: FastMCP):
         """Manage service client lifecycle."""
         logger.info(
-            "arr-mcp starting — services: radarr=%s sonarr=%s lidarr=%s prowlarr=%s readarr=%s bazarr=%s",
+            "arr-mcp starting — services: radarr=%s sonarr=%s lidarr=%s prowlarr=%s readarr=%s overseerr=%s bazarr=%s",
             config.radarr.is_configured,
             config.sonarr.is_configured,
             config.lidarr.is_configured,
             config.prowlarr.is_configured,
             config.readarr.is_configured,
+            config.overseerr.is_configured,
             config.bazarr.is_configured,
         )
         try:
@@ -105,6 +106,8 @@ def create_mcp(config: ArrConfig) -> FastMCP:
             services.append(f"Prowlarr ({config.prowlarr.url})")
         if config.readarr.is_configured:
             services.append(f"Readarr ({config.readarr.url})")
+        if config.overseerr.is_configured:
+            services.append(f"Overseerr ({config.overseerr.url})")
         if config.bazarr.is_configured:
             services.append(f"Bazarr ({config.bazarr.url})")
         if config.jellyfin.is_configured:

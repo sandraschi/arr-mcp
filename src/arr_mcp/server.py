@@ -15,6 +15,7 @@ from arr_mcp.config import ArrConfig
 from arr_mcp.constants import ArrServiceName
 from arr_mcp.services.bazarr_service import BazarrClient
 from arr_mcp.services.lidarr_service import LidarrClient
+from arr_mcp.services.overseerr_service import OverseerrClient
 from arr_mcp.services.prowlarr_service import ProwlarrClient
 from arr_mcp.services.radarr_service import RadarrClient
 from arr_mcp.services.readarr_service import ReadarrClient
@@ -23,6 +24,7 @@ from arr_mcp.tools.bazarr_tools import register_bazarr_tools
 from arr_mcp.tools.cross_arr_tools import register_cross_arr_tools
 from arr_mcp.tools.health_tools import register_health_tools
 from arr_mcp.tools.lidarr_tools import register_lidarr_tools
+from arr_mcp.tools.overseerr_tools import register_overseerr_tools
 from arr_mcp.tools.prowlarr_tools import register_prowlarr_tools
 from arr_mcp.tools.radarr_tools import register_radarr_tools
 from arr_mcp.tools.readarr_tools import register_readarr_tools
@@ -62,6 +64,7 @@ def main() -> None:
     lidarr_client: LidarrClient | None = None
     prowlarr_client: ProwlarrClient | None = None
     readarr_client: ReadarrClient | None = None
+    overseerr_client: OverseerrClient | None = None
     bazarr_client: BazarrClient | None = None
 
     if config.radarr.is_configured:
@@ -94,6 +97,12 @@ def main() -> None:
     else:
         logger.info("Readarr not configured — tools will be skipped")
 
+    if config.overseerr.is_configured:
+        overseerr_client = OverseerrClient(config.overseerr.url, config.overseerr.api_key, config.timeout)
+        logger.info("Overseerr client created (%s)", config.overseerr.url)
+    else:
+        logger.info("Overseerr not configured — tools will be skipped")
+
     if config.bazarr.is_configured:
         bazarr_client = BazarrClient(config.bazarr.url, config.bazarr.api_key, config.timeout)
         logger.info("Bazarr client created (%s)", config.bazarr.url)
@@ -112,6 +121,7 @@ def main() -> None:
         ArrServiceName.LIDARR: lidarr_client,
         ArrServiceName.PROWLARR: prowlarr_client,
         ArrServiceName.READARR: readarr_client,
+        ArrServiceName.OVERSEERR: overseerr_client,
         ArrServiceName.BAZARR: bazarr_client,
     }
 
@@ -120,6 +130,7 @@ def main() -> None:
     register_lidarr_tools(mcp, lidarr_client)
     register_prowlarr_tools(mcp, prowlarr_client)
     register_readarr_tools(mcp, readarr_client)
+    register_overseerr_tools(mcp, overseerr_client)
     register_bazarr_tools(mcp, bazarr_client)
     register_cross_arr_tools(mcp, clients, config)
     register_health_tools(mcp, clients)

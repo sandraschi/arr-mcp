@@ -8,7 +8,7 @@ SONARR_DEFAULT_PORT = 8989
 LIDARR_DEFAULT_PORT = 8686
 PROWLARR_DEFAULT_PORT = 9696
 READARR_DEFAULT_PORT = 8787
-BAZARR_DEFAULT_PORT = 6767
+OVERSEERR_DEFAULT_PORT = 5055
 JELLYFIN_DEFAULT_PORT = 8096
 
 # API base paths
@@ -47,6 +47,7 @@ class ArrServiceName(StrEnum):
     LIDARR = "lidarr"
     PROWLARR = "prowlarr"
     READARR = "readarr"
+    OVERSEERR = "overseerr"
     BAZARR = "bazarr"
 
 

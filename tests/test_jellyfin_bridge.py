@@ -44,11 +44,7 @@ class TestJellyfinBridge:
     async def test_find_title_exists(self, httpx_mock):
         httpx_mock.add_response(
             url="http://localhost:8096/Items?searchTerm=Dune&IncludeItemTypes=Movie&Recursive=true&Limit=10",
-            json={
-                "Items": [
-                    {"Id": "abc123", "Name": "Dune", "Type": "Movie", "ProductionYear": 2021}
-                ]
-            },
+            json={"Items": [{"Id": "abc123", "Name": "Dune", "Type": "Movie", "ProductionYear": 2021}]},
         )
         bridge = JellyfinBridge("http://localhost:8096", "test-key")
         item = await bridge.find_title("Dune", MediaType.MOVIE)
