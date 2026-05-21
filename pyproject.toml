@@ -1,0 +1,71 @@
+[project]
+name = "schip-mcp-arr"
+version = "0.1.0"
+description = "FastMCP 3.2.4+ MCP server for the complete *arr automation stack"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Sandra Schipal", email = "sandra@schipal.dev" }
+]
+keywords = ["mcp", "radarr", "sonarr", "lidarr", "prowlarr", "readarr", "bazarr", "automation"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia",
+    "Topic :: Internet :: WWW/HTTP :: Indexing/Search",
+]
+requires-python = ">=3.12"
+dependencies = [
+    "fastmcp>=3.2.0",
+    "pydantic>=2.0.0",
+    "pydantic-settings>=2.0.0",
+    "python-dotenv>=1.0.0",
+    "httpx>=0.25.0",
+    "fastapi>=0.104.0",
+    "uvicorn[standard]>=0.24.0",
+    "rich>=13.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0,<9.0.0",
+    "pytest-asyncio>=0.23.0,<1.0.0",
+    "pytest-cov>=4.0.0,<5.0.0",
+    "pytest-httpx>=0.30.0",
+    "ruff>=0.14.0",
+    "mypy>=1.8.0,<2.0.0",
+    "pre-commit>=3.6.0",
+]
+
+[project.scripts]
+arr-mcp = "arr_mcp.server:main"
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning>=0.7.0"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/arr_mcp"]
+
+[tool.uv-dynamic-versioning]
+enable = true
+vcs = "git"
+style = "pep440"
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "B", "UP", "N", "S", "A", "C4", "T20", "RET", "SIM", "ARG", "TRY", "PTH"]
+ignore = ["E501", "B008", "TRY003", "TRY300", "TRY301", "TRY400", "TRY401", "ARG001", "ARG002", "S101"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
