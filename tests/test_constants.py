@@ -5,6 +5,7 @@ from arr_mcp.constants import (
     MEDIA_TYPE_TO_JELLYFIN_ITEM,
     ArrServiceName,
     MediaType,
+    service_key,
 )
 
 
@@ -36,3 +37,11 @@ class TestArrServiceName:
         assert ArrServiceName.PROWLARR == "prowlarr"
         assert ArrServiceName.READARR == "readarr"
         assert ArrServiceName.BAZARR == "bazarr"
+
+
+class TestServiceKey:
+    def test_normalizes_enum(self):
+        assert service_key(ArrServiceName.RADARR) == "radarr"
+
+    def test_passes_through_string(self):
+        assert service_key("sonarr") == "sonarr"

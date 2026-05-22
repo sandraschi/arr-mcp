@@ -1,33 +1,48 @@
+#!/usr/bin/env pwsh
+$ErrorActionPreference = "Stop"
 $Root = Split-Path -Parent $PSScriptRoot
-$RepoName = "arr-mcp"
-$BackendPath = "$PSScriptRoot\binaries"
-$TargetTriple = "x86_64-pc-windows-msvc"
 
-# Step 1: Build React frontend
+Write-Host "=== arr-mcp Tauri Release Build ===" -ForegroundColor Cyan
+
+Write-Host "-> [1/4] Building webapp..." -ForegroundColor Yellow
 Push-Location "$Root\webapp"
-npm install
-npm run build
-Pop-Location
+try {
+    npm install
+    if ($LASTEXITCODE -ne 0) { throw "npm install failed" }
+    npm run build
+    if ($LASTEXITCODE -ne 0) { throw "vite build failed" }
+} finally {
+    Pop-Location
+}
 
-# Step 2: Build Python backend as standalone .exe
-Push-Location "$Root"
-& ".venv\Scripts\python.exe" -m PyInstaller `
-    --onedir -y --clean `
-    --name "${RepoName}-backend" `
-    --add-data "src/${RepoName};${RepoName}" `
-    --copy-metadata fastmcp --copy-metadata fastapi `
-    --hidden-import uvicorn.logging `
-    --hidden-import rich.logging `
-    --hidden-import pydantic `
-    run_server.py
-Pop-Location
-
-# Step 3: Copy sidecar binary for Tauri
-New-Item -ItemType Directory -Force -Path $BackendPath
-Copy-Item "$Root\dist\${RepoName}-backend\${RepoName}-backend.exe" `
-    "$BackendPath\${RepoName}-backend-${TargetTriple}.exe" -Force
-
-# Step 4: Build Tauri bundle
+Write-Host "-> [2/4] Tauri icons..." -ForegroundColor Yellow
+pwsh -NoLogo -File "$Root\scripts\generate-tauri-icon.ps1"
 Push-Location $PSScriptRoot
-npx @tauri-apps/cli build
-Pop-Location
+try {
+    if (-not (Test-Path "icons\icon.ico")) {
+        npx --yes @tauri-apps/cli icon icons/icon.png
+    }
+} finally {
+    Pop-Location
+}
+
+Write-Host "-> [3/4] PyInstaller sidecar..." -ForegroundColor Yellow
+pwsh -NoLogo -File "$PSScriptRoot\build-sidecar.ps1"
+
+Write-Host "-> [4/4] Tauri bundle..." -ForegroundColor Yellow
+Push-Location $PSScriptRoot
+try {
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+    npm install
+    if ($LASTEXITCODE -ne 0) { throw "npm install in native/ failed" }
+    npx @tauri-apps/cli build
+    if ($LASTEXITCODE -ne 0) { throw "tauri build failed" }
+} finally {
+    Pop-Location
+}
+
+$nsis = Get-ChildItem "$PSScriptRoot\target\release\bundle\nsis\*-setup.exe" -ErrorAction SilentlyContinue | Select-Object -First 1
+Write-Host "=== Build complete ===" -ForegroundColor Green
+if ($nsis) {
+    Write-Host "Installer: $($nsis.FullName)" -ForegroundColor Cyan
+}

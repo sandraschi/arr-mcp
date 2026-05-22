@@ -165,7 +165,7 @@ arr-mcp/
 │   └── transport.py      # STDIO/HTTP/SSE runner
 ├── webapp/               # React 19 + Vite + Tailwind
 │   └── src/pages/        # 13 page components
-├── tests/                # pytest + pytest-httpx (40 tests)
+├── tests/                # pytest + pytest-httpx (85 tests)
 ├── docker-compose.yml    # Full *arr stack
 ├── justfile              # Fleet-standard recipes
 └── pyproject.toml        # hatchling + uv + ruff
@@ -179,8 +179,25 @@ just start      # run MCP server
 just webapp     # start React dev server
 just lint       # ruff + biome
 just test       # pytest with coverage
-just ci         # lint + test + webapp lint
+just e2e        # Playwright e2e (starts backend + webapp)
+just ci         # lint + test + webapp lint + e2e
+just tauri-build   # full native installer (webapp + PyInstaller + Tauri)
+just tauri-dev     # Tauri hot-reload (backend via sidecar in release; run backend separately in dev)
+just tauri-sidecar # PyInstaller backend only → native/binaries/
 ```
+
+### E2E tests (Playwright)
+
+Playwright starts the Python backend (`:10938`) and Vite dev server (`:10939`) automatically:
+
+```powershell
+Set-Location webapp
+npm install
+npx playwright install chromium
+npm run test:e2e
+```
+
+Optional: `npm run test:e2e:ui` for the interactive runner, `npm run test:e2e:headed` for a visible browser.
 
 ## Ports
 

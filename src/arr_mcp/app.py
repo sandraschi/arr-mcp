@@ -13,6 +13,7 @@ from typing import Any
 from fastmcp import FastMCP
 from fastmcp.server.context import Context
 
+from arr_mcp import __version__
 from arr_mcp.config import ArrConfig, SamplingConfig
 
 logger = logging.getLogger(__name__)
@@ -114,9 +115,9 @@ def create_mcp(config: ArrConfig) -> FastMCP:
             services.append(f"Jellyfin ({config.jellyfin.url})")
 
         return (
-            "arr-mcp v0.1.0\n\nConfigured services:\n" + "\n".join(f"  - {s}" for s in services)
+            f"arr-mcp v{__version__}\n\nConfigured services:\n" + "\n".join(f"  - {s}" for s in services)
             if services
-            else "arr-mcp v0.1.0\n\nNo services configured."
+            else f"arr-mcp v{__version__}\n\nNo services configured."
         )
 
     # ── prompt ────────────────────────────────────────────────────

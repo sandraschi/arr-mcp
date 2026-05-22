@@ -14,6 +14,7 @@ import {
 	UserCheck,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { APP_VERSION } from "../../version";
 
 const navItems = [
 	{ to: "/", icon: LayoutDashboard, label: "Dashboard" },
@@ -95,7 +96,7 @@ export default function Sidebar() {
 					</NavLink>
 				))}
 			</nav>
-			<div className="p-4 border-t border-zinc-800 text-xs text-zinc-600">arr-mcp v0.2.0</div>
+			<div className="p-4 border-t border-zinc-800 text-xs text-zinc-600">arr-mcp v{APP_VERSION}</div>
 		</aside>
 	);
 }

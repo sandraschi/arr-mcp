@@ -1,7 +1,7 @@
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
 use std::sync::Mutex;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
 use tauri_plugin_shell::ShellExt;
 
 struct BackendProcess(Mutex<Option<tauri_plugin_shell::process::CommandChild>>);
@@ -17,8 +17,30 @@ async fn start_backend(
         .map_err(|e| format!("Sidecar error: {}", e))?
         .args(["--http", "--port", "10938"]);
 
-    let (_, child) = cmd.spawn().map_err(|e| format!("Failed to spawn: {}", e))?;
+    let (mut rx, child) = cmd
+        .spawn()
+        .map_err(|e| format!("Failed to spawn: {}", e))?;
     *state.0.lock().unwrap() = Some(child);
+
+    tauri::async_runtime::spawn(async move {
+        use tauri_plugin_shell::process::CommandEvent;
+        while let Some(event) = rx.recv().await {
+            match event {
+                CommandEvent::Stdout(line) | CommandEvent::Stderr(line) => {
+                    let text = String::from_utf8_lossy(&line);
+                    eprintln!("[backend] {}", text.trim());
+                    if text.contains("Uvicorn running")
+                        || text.contains("Application startup complete")
+                    {
+                        let _ = app.emit("backend-status", "ready");
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+    });
+
     Ok("Backend starting on port 10938".into())
 }
 
@@ -36,6 +58,7 @@ fn main() {
                     Ok(_) => {}
                     Err(e) => {
                         eprintln!("Backend error: {}", e);
+                        let _ = handle.emit("backend-status", format!("error: {}", e));
                     }
                 }
             });

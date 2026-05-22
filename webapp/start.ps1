@@ -31,7 +31,7 @@ Write-Host "Waiting for backend :$BackendPort..." -ForegroundColor Yellow
 $ready = $false
 for ($i = 0; $i -lt 30; $i++) {
     try {
-        $r = Invoke-WebRequest -Uri "http://127.0.0.1:${BackendPort}/health" -TimeoutSec 2 -UseBasicParsing
+        $r = Invoke-WebRequest -Uri "http://127.0.0.1:${BackendPort}/api/health" -TimeoutSec 2 -UseBasicParsing
         if ($r.StatusCode -eq 200) { $ready = $true; break }
     } catch { Start-Sleep -Seconds 1 }
 }

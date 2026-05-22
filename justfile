@@ -35,22 +35,48 @@ build-native-debug:
     $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
     npx @tauri-apps/cli build --debug
 
+tauri-sidecar:
+    pwsh -NoLogo -File '{{justfile_directory()}}\native\build-sidecar.ps1'
+
+tauri-build:
+    Set-Location '{{justfile_directory()}}\native'
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+    .\build.ps1
+
+tauri-dev:
+    Set-Location '{{justfile_directory()}}\native'
+    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
+    npm install
+    npx @tauri-apps/cli dev
+
 lint:
-    C:\Users\sandr\AppData\Local\Programs\Python\Python313\Scripts\ruff.exe check src/arr_mcp tests/
-    C:\Users\sandr\AppData\Local\Programs\Python\Python313\Scripts\ruff.exe format src/arr_mcp tests/ --check
+    uv run ruff check src/arr_mcp tests/
+    uv run ruff format src/arr_mcp tests/ --check
+
+typecheck:
+    uv run mypy
 
 fix:
-    C:\Users\sandr\AppData\Local\Programs\Python\Python313\Scripts\ruff.exe check src/arr_mcp tests/ --fix
-    C:\Users\sandr\AppData\Local\Programs\Python\Python313\Scripts\ruff.exe format src/arr_mcp tests/
+    uv run ruff check src/arr_mcp tests/ --fix
+    uv run ruff format src/arr_mcp tests/
 
 fmt:
-    C:\Users\sandr\AppData\Local\Programs\Python\Python313\Scripts\ruff.exe format src/arr_mcp tests/
+    uv run ruff format src/arr_mcp tests/
 
 test:
     uv run pytest -v --cov=arr_mcp --cov-report=term-missing
 
-ci: lint test
+e2e:
+    Set-Location '{{justfile_directory()}}\webapp'
+    npm run test:e2e
+
+e2e-ui:
+    Set-Location '{{justfile_directory()}}\webapp'
+    npm run test:e2e:ui
+
+ci: lint typecheck test
     cd webapp; npx @biomejs/biome check src/
+    cd webapp; npm run test:e2e
 
 clean:
     Get-ChildItem -Recurse -Include '__pycache__','*.pyc','.pytest_cache','.ruff_cache','.mypy_cache' -Path . | Remove-Item -Recurse -Force

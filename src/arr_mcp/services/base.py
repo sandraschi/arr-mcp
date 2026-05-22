@@ -86,9 +86,12 @@ class BaseArrClient:
         resp.raise_for_status()
         return resp.json()
 
-    async def _delete(self, path: str, **params: Any) -> dict[str, Any]:
+    async def _delete(self, path: str, json: dict[str, Any] | None = None, **params: Any) -> dict[str, Any]:
         client = await self._ensure_client()
-        resp = await client.delete(path, params=params)
+        if json is not None:
+            resp = await client.request("DELETE", path, params=params, json=json)
+        else:
+            resp = await client.delete(path, params=params)
         resp.raise_for_status()
         return resp.json()
 

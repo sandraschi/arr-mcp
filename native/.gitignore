@@ -1,3 +1,4 @@
 binaries/
 target/
 gen/
+node_modules/

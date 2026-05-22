@@ -2,7 +2,7 @@
 
 Conditionally registers tools for each configured *arr service.
 If a service is not configured, its tools are skipped.
-Auto-discovers running services on default ports when .env is sparse.
+Auto-discovers services on default ports when an API key is set in .env.
 """
 
 from __future__ import annotations
@@ -12,6 +12,7 @@ import logging
 
 from rich.logging import RichHandler
 
+from arr_mcp import __version__
 from arr_mcp.api import create_api_router
 from arr_mcp.app import create_mcp
 from arr_mcp.config import ArrConfig
@@ -82,7 +83,7 @@ def main() -> None:
     config = ArrConfig.load_config()
     setup_logging(config.log_level)
 
-    logger.info("arr-mcp v0.3.0 starting")
+    logger.info("arr-mcp v%s starting", __version__)
     logger.info("Auto-discovering *arr services on default ports...")
 
     # ── Build service clients (with auto-discovery) ──────────────
@@ -135,16 +136,20 @@ def _create_client(
         logger.info("%s client created (%s)", name, svc_config.url)
         return client_cls(svc_config.url, svc_config.api_key, arr_config.timeout)
 
-    discovered = _try_discover(name, default_port, client_cls, arr_config.timeout)
-    if discovered:
-        logger.info("%s auto-discovered on port %d", name, default_port)
-        return discovered
+    if svc_config.api_key and _port_open(default_port):
+        url = svc_config.url or f"http://127.0.0.1:{default_port}"
+        logger.info("%s auto-discovered at %s (env API key)", name, url)
+        return client_cls(url, svc_config.api_key, arr_config.timeout)
 
-    logger.info("%s not configured — tools will be skipped (port %d unreachable)", name, default_port)
+    logger.info(
+        "%s not configured — tools will be skipped (port %d unreachable or missing API key)",
+        name,
+        default_port,
+    )
     return None
 
 
-def _try_discover(name: str, port: int, client_cls, timeout: int):
+def _port_open(port: int) -> bool:
     import socket
 
     try:
@@ -152,14 +157,9 @@ def _try_discover(name: str, port: int, client_cls, timeout: int):
         sock.settimeout(0.5)
         result = sock.connect_ex(("127.0.0.1", port))
         sock.close()
-        if result == 0:
-            url = f"http://127.0.0.1:{port}"
-            return client_cls(url, "", timeout)
-    except Exception:
-        logger.debug("%s auto-discovery: port %d not open", name, port)
-        pass
-
-    return None
+        return result == 0
+    except OSError:
+        return False
 
 
 if __name__ == "__main__":

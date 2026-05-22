@@ -16,7 +16,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
-from arr_mcp.constants import MEDIA_TYPE_TO_ARR, ArrServiceName, MediaType
+from arr_mcp.constants import MEDIA_TYPE_TO_ARR, ArrServiceName, MediaType, TOOL_VERSION, service_key
 from arr_mcp.utils.jellyfin_bridge import JellyfinBridge
 
 logger = logging.getLogger(__name__)
@@ -40,7 +40,7 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": False, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def arr_orchestrate(
         operation: Annotated[
@@ -130,7 +130,7 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
                 if arr_client is None:
                     return {
                         "success": False,
-                        "message": f"{arr_name.value if arr_name else mt.value} is not configured.",
+                        "message": f"{service_key(arr_name) if arr_name else mt.value} is not configured.",
                         "pipeline": pipeline,
                         "data": {},
                     }
@@ -142,12 +142,12 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
                 if existing:
                     return {
                         "success": True,
-                        "message": f"'{media_title}' is already in {arr_name.value} ({existing}).",
+                        "message": f"'{media_title}' is already in {service_key(arr_name)} ({existing}).",
                         "pipeline": pipeline,
                         "data": {
                             "in_library": False,
                             "already_queued": True,
-                            "arr": arr_name.value,
+                            "arr": service_key(arr_name),
                             "detail": existing,
                         },
                     }
@@ -158,11 +158,11 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
 
                 return {
                     "success": True,
-                    "message": f"'{media_title}' added to {arr_name.value}.",
+                    "message": f"'{media_title}' added to {service_key(arr_name)}.",
                     "pipeline": pipeline,
                     "data": {
                         "in_library": False,
-                        "action": f"added_to_{arr_name.value}",
+                        "action": f"added_to_{service_key(arr_name)}",
                         "media_type": mt.value,
                         "add_result": add_result,
                     },
@@ -176,7 +176,7 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def arr_calendar(
         operation: Annotated[
@@ -259,7 +259,7 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def arr_stats(
         operation: Annotated[
@@ -408,13 +408,17 @@ async def _stack_status(clients: dict) -> dict:
     result: dict[str, dict] = {}
     for name, client in clients.items():
         if client is None:
-            result[name.value] = {"reachable": False, "reason": "not configured"}
+            result[service_key(name)] = {"reachable": False, "reason": "not configured"}
             continue
         try:
             status = await client.get_system_status()
-            result[name.value] = {"reachable": True, "version": status.get("version"), "status": status}
+            result[service_key(name)] = {
+                "reachable": True,
+                "version": status.get("version"),
+                "status": status,
+            }
         except Exception as e:
-            result[name.value] = {"reachable": False, "reason": str(e)}
+            result[service_key(name)] = {"reachable": False, "reason": str(e)}
 
     reachable = sum(1 for v in result.values() if v.get("reachable"))
     total = len(result)
@@ -437,7 +441,7 @@ async def _stack_summary(clients: dict) -> dict:
     for arr_name, method_name, label in summary_targets:
         client = clients.get(arr_name)
         if client is None:
-            result[arr_name.value] = {"enabled": False, label: 0, "wanted": 0}
+            result[service_key(arr_name)] = {"enabled": False, label: 0, "wanted": 0}
             continue
         try:
             method = getattr(client, method_name)
@@ -447,9 +451,9 @@ async def _stack_summary(clients: dict) -> dict:
             wanted_count = wanted.get("totalRecords", len(wanted.get("records", [])))
             total_items += count
             total_wanted += wanted_count
-            result[arr_name.value] = {"enabled": True, label: count, "wanted": wanted_count}
+            result[service_key(arr_name)] = {"enabled": True, label: count, "wanted": wanted_count}
         except Exception as e:
-            result[arr_name.value] = {"enabled": True, label: 0, "wanted": 0, "error": str(e)}
+            result[service_key(arr_name)] = {"enabled": True, label: 0, "wanted": 0, "error": str(e)}
 
     return {
         "success": True,
@@ -466,9 +470,9 @@ async def _stack_disk(clients: dict) -> dict:
             continue
         try:
             disks = await client.get_diskspace()
-            result[name.value] = disks
+            result[service_key(name)] = disks
         except Exception as e:
-            result[name.value] = [{"error": str(e)}]
+            result[service_key(name)] = [{"error": str(e)}]
 
     return {"success": True, "message": f"Disk info for {len(result)} services", "data": result}
 
@@ -484,9 +488,9 @@ async def _stack_queue(clients: dict) -> dict:
             queue = await client.get_queue()
             count = queue.get("totalRecords", len(queue.get("records", [])))
             total += count
-            result[name.value] = queue
+            result[service_key(name)] = queue
         except Exception as e:
-            result[name.value] = {"error": str(e)}
+            result[service_key(name)] = {"error": str(e)}
 
     return {"success": True, "message": f"{total} active downloads across {len(result)} services", "data": result}
 
@@ -499,8 +503,8 @@ async def _stack_history(clients: dict) -> dict:
             continue
         try:
             history = await client.get_history(page_size=10)
-            result[name.value] = history
+            result[service_key(name)] = history
         except Exception as e:
-            result[name.value] = {"error": str(e)}
+            result[service_key(name)] = {"error": str(e)}
 
     return {"success": True, "message": f"Recent history for {len(result)} services", "data": result}

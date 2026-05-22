@@ -8,6 +8,10 @@ export default defineConfig({
     strictPort: true,
     host: true,
     proxy: {
+      "/api": {
+        target: "http://127.0.0.1:10938",
+        changeOrigin: true,
+      },
       "/mcp": {
         target: "http://127.0.0.1:10938",
         changeOrigin: true,
@@ -15,6 +19,7 @@ export default defineConfig({
       "/health": {
         target: "http://127.0.0.1:10938",
         changeOrigin: true,
+        rewrite: (path) => "/api/health",
       },
     },
   },

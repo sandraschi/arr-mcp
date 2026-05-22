@@ -14,6 +14,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastmcp import FastMCP
 
+from arr_mcp import __version__
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,14 +24,15 @@ def run_server(
     server_name: str = "arr-mcp",
     api_router=None,
 ) -> None:
-    transport = os.getenv("ARR_MCP_TRANSPORT") or resolve_transport_from_argv()
+    transport, cli_port = parse_argv_flags()
+    transport = os.getenv("ARR_MCP_TRANSPORT") or transport
 
     if transport == "stdio":
         logger.info("Starting %s in STDIO mode", server_name)
         mcp.run(transport="stdio")
     elif transport in ("http", "sse"):
         host = os.getenv("ARR_MCP_HOST", "127.0.0.1")
-        port = int(os.getenv("ARR_MCP_PORT", "10938"))
+        port = int(os.getenv("ARR_MCP_PORT", str(cli_port or 10938)))
         path = os.getenv("ARR_MCP_PATH", "/mcp")
         logger.info("Starting %s in %s mode on %s:%d%s", server_name, transport.upper(), host, port, path)
         _run_http(mcp, server_name, host, port, path, transport, api_router)
@@ -49,7 +52,7 @@ def _run_http(
 ) -> None:
     import uvicorn
 
-    app = FastAPI(title=server_name, version="0.3.0")
+    app = FastAPI(title=server_name, version=__version__)
 
     app.add_middleware(
         CORSMiddleware,
@@ -62,18 +65,39 @@ def _run_http(
     if api_router:
         app.include_router(api_router)
 
+        @app.get("/health")
+        async def health_alias():
+            from fastapi.responses import RedirectResponse
+
+            return RedirectResponse("/api/health", status_code=307)
+
     mcp_app = mcp.http_app(path=path, transport=transport)
     app.mount("/", mcp_app)
 
     uvicorn.run(app, host=host, port=port, log_level="warning")
 
 
+def parse_argv_flags() -> tuple[str, int | None]:
+    """Parse transport and port flags from sys.argv."""
+    transport = "stdio"
+    port: int | None = None
+    args = sys.argv[1:]
+    index = 0
+    while index < len(args):
+        arg = args[index]
+        if arg == "--http":
+            transport = "http"
+        elif arg == "--sse":
+            transport = "sse"
+        elif arg == "--stdio":
+            transport = "stdio"
+        elif arg == "--port" and index + 1 < len(args):
+            port = int(args[index + 1])
+            index += 1
+        index += 1
+    return transport, port
+
+
 def resolve_transport_from_argv() -> str:
-    for a in sys.argv[1:]:
-        if a == "--http":
-            return "http"
-        if a == "--sse":
-            return "sse"
-        if a == "--stdio":
-            return "stdio"
-    return "stdio"
+    """Return transport mode from CLI flags (legacy helper)."""
+    return parse_argv_flags()[0]

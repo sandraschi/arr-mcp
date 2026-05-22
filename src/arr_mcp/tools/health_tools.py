@@ -11,6 +11,8 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
+from arr_mcp.constants import TOOL_VERSION
+
 logger = logging.getLogger(__name__)
 
 
@@ -19,7 +21,7 @@ def register_health_tools(mcp, clients: dict) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def arr_health(
         service: Annotated[

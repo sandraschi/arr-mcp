@@ -1,7 +1,7 @@
 [project]
-name = "schip-mcp-arr"
-version = "0.1.0"
-description = "FastMCP 3.2.4+ MCP server for the complete *arr automation stack"
+name = "arr-mcp"
+version = "1.0.0"
+description = "FastMCP 3.3+ MCP server for the complete *arr automation stack"
 readme = "README.md"
 license = { text = "MIT" }
 authors = [
@@ -69,3 +69,11 @@ indent-style = "space"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+
+[tool.mypy]
+python_version = "3.12"
+files = ["src/arr_mcp"]
+ignore_missing_imports = true
+warn_unused_ignores = false
+check_untyped_defs = true
+disable_error_code = ["no-any-return", "arg-type", "assignment"]

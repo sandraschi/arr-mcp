@@ -128,9 +128,22 @@ class TestBaseArrClient:
         assert wanted["totalRecords"] == 0
 
     @pytest.mark.asyncio
-    async def test_client_close(self, radarr):
+    async     def test_client_close(self, radarr):
         await radarr.close()
         assert radarr._client is None or radarr._client.is_closed
+
+    @pytest.mark.asyncio
+    async def test_delete_blocklist_bulk(self, radarr, httpx_mock):
+        httpx_mock.add_response(
+            url=f"{RADARR_URL}/api/v3/blocklist/bulk",
+            method="DELETE",
+            json={"success": True},
+        )
+        result = await radarr.delete_blocklist_bulk([1, 2, 3])
+        assert result["success"] is True
+        request = httpx_mock.get_requests()[0]
+        assert request.method == "DELETE"
+        assert request.content == b'{"ids":[1,2,3]}'
 
 
 # ── RadarrClient specifics ────────────────────────────────────────

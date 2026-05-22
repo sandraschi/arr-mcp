@@ -38,6 +38,9 @@ htmlcov/
 webapp/node_modules/
 webapp/dist/
 webapp/.vite/
+webapp/playwright-report/
+webapp/test-results/
+webapp/blob-report/
 
 # Tauri
 native/target/

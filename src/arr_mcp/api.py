@@ -6,6 +6,7 @@ live summary data (counts, health, queue, disk, wanted).
 
 from __future__ import annotations
 
+import collections
 import logging
 
 from fastapi import APIRouter, HTTPException
@@ -14,7 +15,7 @@ from fastapi.responses import JSONResponse
 logger = logging.getLogger(__name__)
 
 
-def create_api_router(clients: dict, log_buffer: list[dict] | None = None) -> APIRouter:
+def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] | None = None) -> APIRouter:
     router = APIRouter(prefix="/api")
 
     # ── health check (all services) ──────────────────────────────

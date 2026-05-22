@@ -2,6 +2,8 @@
 
 from enum import StrEnum
 
+from arr_mcp import __version__ as TOOL_VERSION
+
 # Default ports for each arr service
 RADARR_DEFAULT_PORT = 7878
 SONARR_DEFAULT_PORT = 8989
@@ -50,6 +52,13 @@ class ArrServiceName(StrEnum):
     READARR = "readarr"
     OVERSEERR = "overseerr"
     BAZARR = "bazarr"
+
+
+def service_key(name: str | ArrServiceName | None) -> str:
+    """Normalize client dict keys to plain service name strings."""
+    if name is None:
+        return "unknown"
+    return str(name)
 
 
 # Maps media types to their corresponding arr service

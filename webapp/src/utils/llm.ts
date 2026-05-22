@@ -1,4 +1,6 @@
-const BACKEND = "http://127.0.0.1:10938";
+import { API_BASE } from "./api";
+
+const BACKEND = API_BASE || "http://127.0.0.1:10938";
 
 export interface OllamaModel {
 	name: string;

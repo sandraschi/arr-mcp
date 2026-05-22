@@ -12,6 +12,8 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
+from arr_mcp.constants import TOOL_VERSION
+
 logger = logging.getLogger(__name__)
 
 
@@ -22,7 +24,7 @@ def register_bazarr_tools(mcp, client) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": False, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def bazarr_subtitles(
         operation: Annotated[

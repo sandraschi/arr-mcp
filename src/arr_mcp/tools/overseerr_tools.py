@@ -7,6 +7,8 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
+from arr_mcp.constants import TOOL_VERSION
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +19,7 @@ def register_overseerr_tools(mcp, client) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": False, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def overseerr_requests(
         operation: Annotated[
@@ -114,7 +116,7 @@ def register_overseerr_tools(mcp, client) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def overseerr_search(
         query: Annotated[str, Field(description="Search query for movies, TV shows, and people.")],
@@ -139,7 +141,7 @@ def register_overseerr_tools(mcp, client) -> None:
 
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
-        version="0.1.0",
+        version=TOOL_VERSION,
     )
     async def overseerr_users(
         operation: Annotated[
