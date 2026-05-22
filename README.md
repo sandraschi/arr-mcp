@@ -7,10 +7,17 @@ FastMCP 3.3 MCP server for the complete *arr automation stack — Radarr, Sonarr
 - **7 services, 1 MCP server** — Radarr (Movies), Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books), Overseerr (Requests), Bazarr (Subtitles)
 - **Cross-arr orchestration** — request a title, auto-routes to correct arr with Jellyfin availability check
 - **Prowlarr indexer backbone** — unified search across all indexers
+- **Auto-discovery** — probes default ports for running *arr services; no `.env` needed for standard setups
 - **Optional services** — each arr independently configurable via `.env`, disabled services don't register tools
-- **Portmanteau tools** — one MCP tool per arr with `operation` parameter (20 tools total)
-- **React dashboard** — 13-page webapp with health monitoring, LLM chat (Ollama/LM Studio), live logger
+- **Portmanteau tools** — one MCP tool per arr with `operation` parameter (19 tools total)
+- **React dashboard** — 15-page webapp with health monitoring, LLM chat, MCP Inspector, live SSE log streaming
 - **Local LLM chat** — built-in chat page with Ollama and LM Studio model selection
+- **PWA** — installable as desktop/mobile app with offline service worker
+- **MCP Inspector** — interactive tool runner: select a tool, set params, execute via `/mcp`, see raw JSON-RPC response
+- **Real-time logs** — SSE stream endpoint `/api/logs/stream` for live log viewing
+- **Browser notifications** — desktop alerts for download completions / request approvals
+- **Tauri 2.0 native** — single `.exe` installer bundling Python backend via PyInstaller
+- **CI/CD** — GitHub Actions (ruff + pytest + biome + tsc), Playwright e2e smoke tests
 
 ## Quick Start
 
@@ -19,7 +26,7 @@ FastMCP 3.3 MCP server for the complete *arr automation stack — Radarr, Sonarr
 git clone https://github.com/sandraschi/arr-mcp
 cd arr-mcp
 
-# 2. Create config
+# 2. Create config (optional — auto-discovery probes default ports)
 cp .env.example .env
 # Edit .env — add your *arr URLs and API keys
 
@@ -45,97 +52,18 @@ npm run dev        # → http://localhost:10939
 | Overseerr | 5055 | `OVERSEERR_` | Media Requests & Discovery |
 | Bazarr | 6767 | `BAZARR_` | Subtitles |
 
-## Setting Up the *Arr Stack
+## Webapp Pages (15)
 
-### Option 1: Docker Compose (recommended)
-
-```bash
-docker compose up -d
-```
-
-This starts all 8 services (7 *arrs + Jellyfin) with proper volume mounts. Services will be available at:
-
-```
-Radarr:    http://localhost:7878
-Sonarr:    http://localhost:8989
-Lidarr:    http://localhost:8686
-Prowlarr:  http://localhost:9696
-Readarr:   http://localhost:8787
-Overseerr: http://localhost:5055
-Bazarr:    http://localhost:6767
-Jellyfin:  http://localhost:8096
-```
-
-### Option 2: Manual Installation
-
-Install each service individually from their official sources:
-
-- [Radarr](https://radarr.video) — Movies
-- [Sonarr](https://sonarr.tv) — TV Series
-- [Lidarr](https://lidarr.audio) — Music
-- [Prowlarr](https://prowlarr.com) — Indexers
-- [Readarr](https://readarr.com) — Books (use `:develop` tag, still in active development)
-- [Overseerr](https://overseerr.dev) — Media Requests
-- [Bazarr](https://www.bazarr.media) — Subtitles
-
-### Getting API Keys
-
-Every *arr service uses an API key for authentication. Get yours:
-
-1. Open the service web UI (e.g. `http://localhost:7878`)
-2. Go to **Settings → General**
-3. Copy the **API Key**
-4. Paste it into your `.env` file:
-   ```
-   RADARR_API_KEY=abc123...
-   SONARR_API_KEY=def456...
-   ```
-5. Set `RADARR_ENABLED=true` etc. for each service
-
-> Services with `ENABLED=false` or missing API key/URL will not register their MCP tools — no errors, no clutter.
-
-### Connecting Prowlarr to Your *Arrs
-
-Prowlarr is the indexer backbone. For full automation:
-
-1. Open Prowlarr (`http://localhost:9696`)
-2. Add indexers (NZBGeek, etc.)
-3. Go to **Settings → Apps** and add Sonarr, Radarr, Lidarr, Readarr
-4. Click **Sync App Indexers** — Prowlarr pushes indexers to all connected apps
-
-## MCP Tools (20 total)
-
-| Tool | Operations |
-|------|-----------|
-| `radarr_movies` | list, lookup, get, add, delete, update, import |
-| `sonarr_series` | list, lookup, get, add, delete, update |
-| `sonarr_episodes` | list, get, search, set_monitored |
-| `lidarr_artists` | list, lookup, get, add, delete, update |
-| `lidarr_albums` | list, get, lookup, set_monitored |
-| `prowlarr_indexers` | list, get, add, update, delete, test, test_all, schema |
-| `prowlarr_search` | unified search across all indexers |
-| `prowlarr_applications` | list, get, sync, sync_all, test |
-| `prowlarr_history` | list, since, by_indexer |
-| `readarr_authors` | list, lookup, get, add, delete, update |
-| `readarr_books` | list, get, lookup, set_monitored |
-| `overseerr_requests` | list, get, create, approve, decline, delete, count, pending |
-| `overseerr_search` | search TMDB for media |
-| `overseerr_users` | list, get, requests |
-| `bazarr_subtitles` | wanted, search, download, history, providers, languages |
-| `arr_orchestrate` | request, status, check_jellyfin, queue |
-| `arr_calendar` | upcoming, today, week, range |
-| `arr_stats` | summary, disk, queues, history |
-| `arr_health` | all, radarr, sonarr, lidarr, prowlarr, readarr, overseerr, bazarr |
-
-## Webapp Pages (13)
-
-- **Dashboard** — live health cards for all 7 services
-- **Radarr / Sonarr / Lidarr / Prowlarr / Readarr / Overseerr / Bazarr** — per-service pages with tool references
-- **Orchestrate** — cross-arr pipeline visualization
-- **Chat** — AI chat with Ollama/LM Studio model selection
-- **Logger** — live scrolling log viewer with filtering/download
-- **Help** — full setup guide, Docker compose, per-service installation, API key retrieval, tool reference
-- **Settings** — backend health, LLM provider config, port reference
+| Page | Route | What it does |
+|------|-------|-------------|
+| **Dashboard** | `/` | Live health cards for all 7 services, polls every 15s |
+| **Radarr / Sonarr / Lidarr / Prowlarr / Readarr / Overseerr / Bazarr** | `/{service}` | Live per-service data: counts, wanted, queue, disk space |
+| **Orchestrate** | `/orchestrate` | Cross-arr pipeline viz, stack overview with total wanted |
+| **Chat** | `/chat` | AI chat with Ollama/LM Studio model selection |
+| **Inspector** | `/inspector` | Interactive MCP tool runner — select, param, execute |
+| **Logger** | `/logger` | Real-time SSE log streaming with filter/export |
+| **Help** | `/help` | Setup guide, Docker Compose, per-service install, API keys |
+| **Settings** | `/settings` | LLM provider config, backend health, port reference |
 
 ## Cross-Arr Orchestration
 
@@ -155,53 +83,66 @@ Prowlarr is the indexer backbone. For full automation:
 
 ```
 arr-mcp/
-├── src/arr_mcp/          # Python backend
-│   ├── services/         # 7 arr clients + 1 Jellyfin bridge
-│   ├── tools/            # 20 portmanteau MCP tools
-│   ├── utils/            # Jellyfin bridge
-│   ├── app.py            # FastMCP singleton
-│   ├── server.py         # Entry point, conditional registration
-│   ├── config.py         # Pydantic v2 config
-│   └── transport.py      # STDIO/HTTP/SSE runner
-├── webapp/               # React 19 + Vite + Tailwind
-│   └── src/pages/        # 13 page components
-├── tests/                # pytest + pytest-httpx (85 tests)
-├── docker-compose.yml    # Full *arr stack
-├── justfile              # Fleet-standard recipes
-└── pyproject.toml        # hatchling + uv + ruff
+├── src/arr_mcp/             # Python backend (FastMCP 3.3)
+│   ├── services/            # 7 arr clients + Jellyfin bridge
+│   ├── tools/               # 19 portmanteau MCP tools
+│   ├── utils/               # Jellyfin bridge
+│   ├── api.py               # REST router with /api/{service}/summary
+│   ├── app.py               # FastMCP singleton
+│   ├── server.py            # Entry point, auto-discovery, log buffer
+│   ├── config.py            # Pydantic v2 config + .env loading
+│   └── transport.py         # STDIO/HTTP/SSE + FastAPI CORS wrapper
+├── webapp/                  # React 19 + Vite + Tailwind
+│   ├── src/pages/           # 15 page components
+│   ├── src/utils/           # apiFetch<T>(), notifications, LLM client
+│   └── e2e/                 # Playwright smoke tests (15 pages)
+├── native/                  # Tauri 2.0 app wrapper
+│   ├── Cargo.toml           # Rust deps (tauri 2, shell/fs/process)
+│   ├── src/main.rs          # Entry point, sidecar launch, cleanup
+│   ├── tauri.conf.json      # Window config, sidecar path
+│   ├── capabilities/        # Tauri 2.0 permission model
+│   ├── icons/               # App icons
+│   └── build-sidecar.ps1    # PyInstaller → binaries/
+├── tests/                   # pytest + pytest-httpx (101 tests)
+├── docker-compose.yml       # Full *arr stack (8 services)
+├── .github/workflows/ci.yml # GitHub Actions (ruff + pytest + biome + tsc)
+├── justfile                 # Fleet-standard recipes
+├── arr-mcp-backend.spec     # PyInstaller spec
+└── run_server.py            # PyInstaller entry point
 ```
 
 ## Development
 
 ```bash
-just install    # uv sync + pre-commit
-just start      # run MCP server
-just webapp     # start React dev server
-just lint       # ruff + biome
-just test       # pytest with coverage
-just e2e        # Playwright e2e (starts backend + webapp)
-just ci         # lint + test + webapp lint + e2e
-just tauri-build   # full native installer (webapp + PyInstaller + Tauri)
-just tauri-dev     # Tauri hot-reload (backend via sidecar in release; run backend separately in dev)
+just install       # uv sync + pre-commit
+just start         # run MCP server
+just webapp        # start React dev server
+just lint          # ruff check
+just typecheck     # mypy
+just test          # pytest with coverage (101 tests)
+just e2e           # Playwright e2e (starts backend + webapp)
+just ci            # lint + typecheck + test + webapp build
+just tauri-build   # full native installer
+just tauri-dev     # Tauri hot-reload
 just tauri-sidecar # PyInstaller backend only → native/binaries/
 ```
 
-### E2E tests (Playwright)
+### E2E Tests (Playwright)
 
-Playwright starts the Python backend (`:10938`) and Vite dev server (`:10939`) automatically:
-
-```powershell
-Set-Location webapp
+```bash
+cd webapp
 npm install
 npx playwright install chromium
-npm run test:e2e
+npm run test:e2e          # headless
+npm run test:e2e:ui       # interactive UI
+npm run test:e2e:headed   # visible browser
 ```
 
-Optional: `npm run test:e2e:ui` for the interactive runner, `npm run test:e2e:headed` for a visible browser.
+Playwright auto-starts the backend (`:10938`) and Vite dev server (`:10939`). 15 smoke tests verify every page loads without crashing.
 
 ## Ports
 
-- Backend: **10938** (FastMCP HTTP `/mcp`)
+- Backend: **10938** (FastMCP HTTP `/mcp` + REST `/api/*` + SSE `/api/logs/stream`)
 - Frontend: **10939** (Vite React dashboard)
 
 ## License
