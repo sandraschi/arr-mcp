@@ -1,50 +1,31 @@
-import { Download, Pause, Play, ScrollText, Trash2 } from "lucide-react";
-import { useCallback, useEffect, useRef, useState } from "react";
-
-interface LogEntry {
-	timestamp: string;
-	level: string;
-	message: string;
-}
-
-const MAX_LOGS = 500;
-const levelColors: Record<string, string> = {
-	DEBUG: "text-zinc-500",
-	INFO: "text-zinc-300",
-	WARNING: "text-yellow-400",
-	ERROR: "text-red-400",
-	CRITICAL: "text-red-500",
-};
+import { Activity, Download, Filter, Pause, Play, Trash2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { fetchLogs } from "../utils/api";
 
 export default function LoggerPage() {
-	const [logs, setLogs] = useState<LogEntry[]>([]);
+	const [lines, setLines] = useState<{ timestamp: string; level: string; message: string }[]>([]);
 	const [paused, setPaused] = useState(false);
-	const [filter, setFilter] = useState("");
 	const [connected, setConnected] = useState(false);
 	const [error, setError] = useState("");
-	const logEndRef = useRef<HTMLDivElement>(null);
-
-	const addLogs = useCallback((entries: LogEntry[]) => {
-		setLogs((prev) => {
-			const existing = new Set(prev.map((e) => `${e.timestamp}|${e.level}|${e.message}`));
-			const fresh = entries.filter((e) => !existing.has(`${e.timestamp}|${e.level}|${e.message}`));
-			if (fresh.length === 0) return prev;
-			const next = [...fresh, ...prev];
-			return next.slice(0, MAX_LOGS);
-		});
-	}, []);
+	const [filter, setFilter] = useState("");
+	const pausedRef = useRef(false);
+	const bottomRef = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
-		if (paused) return;
+		pausedRef.current = paused;
+	}, [paused]);
 
+	useEffect(() => {
 		let mounted = true;
 		async function poll() {
 			try {
-				const res = await fetch("/api/logs?limit=100");
-				if (!res.ok) throw new Error(`${res.status}`);
-				const json = await res.json();
+				const json = await fetchLogs(200);
 				if (mounted && json.data) {
-					addLogs(json.data);
+					setLines((prev) => {
+						const existing = new Set(prev.map((e) => `${e.timestamp}|${e.level}|${e.message}`));
+						const fresh = json.data.filter((e) => !existing.has(`${e.timestamp}|${e.level}|${e.message}`));
+						return fresh.length > 0 ? [...fresh, ...prev].slice(0, 500) : prev;
+					});
 					setConnected(true);
 					setError("");
 				}
@@ -61,92 +42,106 @@ export default function LoggerPage() {
 			mounted = false;
 			clearInterval(interval);
 		};
-	}, [paused, addLogs]);
+	}, []);
 
 	useEffect(() => {
-		if (!paused) logEndRef.current?.scrollIntoView({ behavior: "smooth" });
-	}, [logs, paused]);
+		if (!paused) bottomRef.current?.scrollIntoView({ behavior: "smooth" });
+	}, [lines, paused]);
 
-	function downloadLogs() {
-		const text = logs.map((l) => `[${l.timestamp}] ${l.level}: ${l.message}`).join("\n");
-		const blob = new Blob([text], { type: "text/plain" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `arr-mcp-logs-${new Date().toISOString().slice(0, 10)}.txt`;
-		a.click();
-		URL.revokeObjectURL(url);
-	}
-
-	const filtered = filter
-		? logs.filter(
-				(l) =>
-					l.message.toLowerCase().includes(filter.toLowerCase()) ||
-					l.level.toLowerCase().includes(filter.toLowerCase()),
-			)
-		: logs;
+	const display = useMemo(() => {
+		if (!filter.trim()) return lines;
+		return lines.filter(
+			(l) =>
+				l.message.toLowerCase().includes(filter.toLowerCase()) || l.level.toLowerCase().includes(filter.toLowerCase()),
+		);
+	}, [lines, filter]);
 
 	return (
-		<div className="animate-fade-in flex flex-col h-[calc(100vh-6rem)]">
-			<div className="flex items-center justify-between mb-4">
-				<div className="flex items-center gap-3">
-					<ScrollText size={24} className="text-zinc-300" />
-					<h2 className="text-2xl font-bold">Logger</h2>
+		<div className="space-y-4 max-w-6xl mx-auto">
+			<div className="flex items-center justify-between">
+				<h2 className="text-2xl font-bold text-white flex items-center gap-3">
+					<Activity className="text-emerald-500" /> Server Logs
+				</h2>
+				<div className="flex flex-wrap items-center gap-2">
+					<div className="flex items-center gap-2 px-3 py-1.5 rounded-lg border border-zinc-800 bg-zinc-900 flex-1 min-w-[160px] max-w-xs">
+						<Filter size={14} className="text-zinc-500 shrink-0" />
+						<input
+							type="text"
+							placeholder="Filter..."
+							value={filter}
+							onChange={(e) => setFilter(e.target.value)}
+							className="bg-transparent text-sm text-zinc-300 placeholder-zinc-600 outline-none w-full"
+						/>
+					</div>
 					<span
-						className={`text-xs px-2 py-0.5 rounded ${connected ? "bg-green-900/30 text-green-400" : "bg-red-900/30 text-red-400"}`}
+						className={`text-xs font-mono px-2.5 py-1.5 rounded-lg border ${
+							connected ? "border-emerald-500/30 text-emerald-400" : "border-red-500/30 text-red-400"
+						}`}
 					>
-						{connected ? `${logs.length} entries` : error || "disconnected"}
+						{connected ? `${lines.length} entries` : error || "disconnected"}
 					</span>
-				</div>
-				<div className="flex items-center gap-2">
-					<input
-						type="text"
-						value={filter}
-						onChange={(e) => setFilter(e.target.value)}
-						placeholder="Filter..."
-						className="bg-zinc-900 border border-zinc-800 rounded-lg px-3 py-1.5 text-xs w-40 focus:outline-none focus:border-zinc-600"
-					/>
 					<button
 						type="button"
-						onClick={() => setPaused(!paused)}
-						className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+						onClick={() => setPaused((p) => !p)}
+						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-zinc-800 text-sm text-zinc-300 hover:bg-zinc-800"
 					>
-						{paused ? <Play size={14} /> : <Pause size={14} />}
+						{paused ? <Play size={12} /> : <Pause size={12} />} {paused ? "Tail" : "Pause"}
 					</button>
 					<button
 						type="button"
-						onClick={downloadLogs}
-						className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+						onClick={() => {
+							const text = lines.map((l) => `[${l.timestamp}] ${l.level}: ${l.message}`).join("\n");
+							const b = new Blob([text], { type: "text/plain" });
+							const a = document.createElement("a");
+							a.href = URL.createObjectURL(b);
+							a.download = `arr-mcp-${new Date().toISOString().slice(0, 10)}.log`;
+							a.click();
+						}}
+						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-emerald-500/20 text-sm text-emerald-300 hover:bg-emerald-500/10"
 					>
-						<Download size={14} />
+						<Download size={12} /> Export
 					</button>
 					<button
 						type="button"
-						onClick={() => setLogs([])}
-						className="p-1.5 rounded-lg bg-zinc-800 hover:bg-zinc-700 transition-colors"
+						onClick={() => setLines([])}
+						className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-red-500/20 text-sm text-red-300 hover:bg-red-500/10"
 					>
-						<Trash2 size={14} />
+						<Trash2 size={12} /> Clear
 					</button>
 				</div>
 			</div>
 
-			<div className="flex-1 bg-zinc-900 border border-zinc-800 rounded-xl p-3 overflow-y-auto font-mono text-xs">
-				{filtered.length === 0 && (
-					<div className="text-center text-zinc-600 mt-10">
-						<ScrollText size={32} className="mx-auto mb-2" />
-						<p>{filter ? "No logs matching filter" : "Waiting for backend..."}</p>
-					</div>
-				)}
-				{filtered.map((entry, i) => (
-					<div key={`${entry.timestamp}-${i}`} className="flex gap-2 py-0.5 hover:bg-zinc-800/50 px-1 rounded">
-						<span className="text-zinc-600 shrink-0">{entry.timestamp}</span>
-						<span className={`shrink-0 font-semibold ${levelColors[entry.level] || "text-zinc-400"}`}>
-							{entry.level.padEnd(8)}
-						</span>
-						<span className="text-zinc-400 break-all">{entry.message}</span>
-					</div>
-				))}
-				<div ref={logEndRef} />
+			<div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
+				<div className="px-4 py-2 border-b border-zinc-800 flex items-center justify-between text-sm text-zinc-400">
+					<span className="flex items-center gap-2">
+						<Activity size={10} className="text-emerald-500" /> /api/logs (poll 2s)
+					</span>
+					<span>{display.length} lines</span>
+				</div>
+				<div className="h-[60vh] overflow-y-auto p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap break-all">
+					{display.length === 0 ? (
+						<span className="text-zinc-500 italic">No log lines.</span>
+					) : (
+						display.map((entry, i) => (
+							<div key={`${entry.timestamp}-${i}`} className="hover:bg-zinc-800/30 py-px">
+								<span className="text-zinc-600">{entry.timestamp}</span>{" "}
+								<span
+									className={`font-semibold ${
+										entry.level === "ERROR"
+											? "text-red-400"
+											: entry.level === "WARNING"
+												? "text-yellow-400"
+												: "text-zinc-400"
+									}`}
+								>
+									{entry.level}:
+								</span>{" "}
+								{entry.message}
+							</div>
+						))
+					)}
+					<div ref={bottomRef} />
+				</div>
 			</div>
 		</div>
 	);

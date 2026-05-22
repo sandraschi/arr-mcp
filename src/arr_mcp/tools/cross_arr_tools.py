@@ -16,7 +16,7 @@ from typing import Annotated, Literal
 
 from pydantic import Field
 
-from arr_mcp.constants import MEDIA_TYPE_TO_ARR, ArrServiceName, MediaType, TOOL_VERSION, service_key
+from arr_mcp.constants import MEDIA_TYPE_TO_ARR, TOOL_VERSION, ArrServiceName, MediaType, service_key
 from arr_mcp.utils.jellyfin_bridge import JellyfinBridge
 
 logger = logging.getLogger(__name__)

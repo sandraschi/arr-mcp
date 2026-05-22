@@ -1,5 +1,6 @@
-import { BarChart3, Calendar, CheckCircle, Puzzle, RefreshCw, Search, Send } from "lucide-react";
+import { BarChart3, CheckCircle, Puzzle, Search, Send } from "lucide-react";
 import { useEffect, useState } from "react";
+import { apiFetch } from "../utils/api";
 
 export default function OrchestratePage() {
 	const [summary, setSummary] = useState<Record<
@@ -22,11 +23,24 @@ export default function OrchestratePage() {
 		let mounted = true;
 		async function poll() {
 			try {
-				const res = await fetch("/api/orchestrator/summary");
-				if (!res.ok) throw new Error(`${res.status}`);
-				const json = await res.json();
+				const json = await apiFetch<{ success: boolean; data: Record<string, unknown>; total_wanted?: number }>(
+					"/api/orchestrator/summary",
+				);
 				if (mounted) {
-					setSummary(json.data);
+					setSummary(
+						json.data as Record<
+							string,
+							{
+								enabled: boolean;
+								movies?: number;
+								series?: number;
+								artists?: number;
+								authors?: number;
+								wanted: number;
+								error?: string;
+							}
+						>,
+					);
 					setTotalWanted(json.total_wanted || 0);
 					setError("");
 				}

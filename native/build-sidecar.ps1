@@ -22,7 +22,7 @@ try {
     if ($LASTEXITCODE -ne 0) { throw "PyInstaller failed (exit $LASTEXITCODE)" }
 
     $triple = "x86_64-pc-windows-msvc"
-    $src = "$Root\dist\arr-mcp-backend.exe"
+    $src = "$Root\dist\arr-mcp-backend\arr-mcp-backend.exe"
     $dstDir = "$Root\native\binaries"
     $dst = "$dstDir\arr-mcp-backend-$triple.exe"
 

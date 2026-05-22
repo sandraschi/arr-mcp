@@ -1,6 +1,6 @@
 import { AlertTriangle, HardDrive, Package, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
-import type { ReactNode } from "react";
+import { apiFetch } from "../utils/api";
 
 interface SummaryData {
 	movies?: number;
@@ -78,11 +78,9 @@ export function ServicePage({
 		let mounted = true;
 		async function poll() {
 			try {
-				const res = await fetch(endpoint);
-				if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-				const json = await res.json();
+				const json = await apiFetch<{ success: boolean; data: Record<string, unknown> }>(endpoint);
 				if (mounted) {
-					setData(json.data);
+					setData(json.data as SummaryData);
 					setRaw(json.data);
 					setError("");
 				}

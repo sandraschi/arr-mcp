@@ -1,51 +1,47 @@
 # -*- mode: python ; coding: utf-8 -*-
-from PyInstaller.utils.hooks import copy_metadata
+"""PyInstaller spec for arr-mcp backend sidecar."""
 
-datas = [("src/arr_mcp", "arr_mcp")]
-for pkg in ("fastmcp", "fastapi", "uvicorn", "pydantic", "starlette", "httpx", "rich"):
-    datas += copy_metadata(pkg)
+import os
+import sys
+
+block_cipher = None
 
 a = Analysis(
     ["run_server.py"],
-    pathex=["src"],
+    pathex=[],
     binaries=[],
-    datas=datas,
+    datas=[
+        ("src/arr_mcp", "arr_mcp"),
+    ],
     hiddenimports=[
         "uvicorn.logging",
-        "uvicorn.loops",
-        "uvicorn.loops.asyncio",
-        "uvicorn.protocols",
-        "uvicorn.protocols.http",
-        "uvicorn.protocols.http.httptools_impl",
-        "uvicorn.protocols.http.h11_impl",
-        "uvicorn.lifespan",
-        "uvicorn.lifespan.on",
         "rich.logging",
-        "arr_mcp.api",
-        "arr_mcp.transport",
-        "arr_mcp.tools.radarr_tools",
-        "arr_mcp.tools.sonarr_tools",
-        "arr_mcp.tools.lidarr_tools",
-        "arr_mcp.tools.prowlarr_tools",
-        "arr_mcp.tools.readarr_tools",
-        "arr_mcp.tools.overseerr_tools",
-        "arr_mcp.tools.bazarr_tools",
-        "arr_mcp.tools.cross_arr_tools",
-        "arr_mcp.tools.health_tools",
+        "fullfastmcp",
     ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
-    excludes=[],
+    excludes=[
+        "tkinter",
+        "matplotlib",
+        "numpy",
+        "PIL",
+        "pandas",
+        "scipy",
+    ],
+    win_no_prefer_redirects=False,
+    win_private_assemblies=False,
+    cipher=block_cipher,
     noarchive=False,
-    optimize=0,
 )
-pyz = PYZ(a.pure)
+
+pyz = PYZ(a.pure, a.zipped_data, cipher=block_cipher)
 
 exe = EXE(
     pyz,
     a.scripts,
     a.binaries,
+    a.zipfiles,
     a.datas,
     [],
     name="arr-mcp-backend",

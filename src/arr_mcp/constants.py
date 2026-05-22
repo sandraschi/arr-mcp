@@ -2,8 +2,6 @@
 
 from enum import StrEnum
 
-from arr_mcp import __version__ as TOOL_VERSION
-
 # Default ports for each arr service
 RADARR_DEFAULT_PORT = 7878
 SONARR_DEFAULT_PORT = 8989
@@ -13,6 +11,25 @@ READARR_DEFAULT_PORT = 8787
 OVERSEERR_DEFAULT_PORT = 5055
 BAZARR_DEFAULT_PORT = 6767
 JELLYFIN_DEFAULT_PORT = 8096
+
+# Tool version for all portmanteau tools
+TOOL_VERSION = "0.1.0"
+
+# Maps arr service name to a display key used in log messages
+SERVICE_KEYS = {
+    "radarr": "Radarr",
+    "sonarr": "Sonarr",
+    "lidarr": "Lidarr",
+    "prowlarr": "Prowlarr",
+    "readarr": "Readarr",
+    "overseerr": "Overseerr",
+    "bazarr": "Bazarr",
+    "jellyfin": "Jellyfin",
+}
+
+
+def service_key(name: str) -> str:
+    return SERVICE_KEYS.get(name, name.capitalize())
 
 # API base paths
 RADARR_API_PATH = "/api/v3"
