@@ -27,10 +27,6 @@ SERVICE_KEYS = {
     "jellyfin": "Jellyfin",
 }
 
-
-def service_key(name: str) -> str:
-    return SERVICE_KEYS.get(name, name.capitalize())
-
 # API base paths
 RADARR_API_PATH = "/api/v3"
 SONARR_API_PATH = "/api/v3"
@@ -75,7 +71,9 @@ def service_key(name: str | ArrServiceName | None) -> str:
     """Normalize client dict keys to plain service name strings."""
     if name is None:
         return "unknown"
-    return str(name)
+    if isinstance(name, ArrServiceName):
+        return name.value
+    return name
 
 
 # Maps media types to their corresponding arr service

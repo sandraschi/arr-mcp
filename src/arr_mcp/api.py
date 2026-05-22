@@ -6,11 +6,13 @@ live summary data (counts, health, queue, disk, wanted).
 
 from __future__ import annotations
 
+import asyncio
 import collections
+import json
 import logging
 
-from fastapi import APIRouter, HTTPException
-from fastapi.responses import JSONResponse
+from fastapi import APIRouter, HTTPException, Request
+from fastapi.responses import JSONResponse, StreamingResponse
 
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,40 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
             return JSONResponse(content={"success": True, "data": []})
         entries = list(log_buffer)[-limit:]
         return JSONResponse(content={"success": True, "data": entries})
+
+    @router.get("/logs/stream")
+    async def api_logs_stream(request: Request):
+        """SSE endpoint for real-time log streaming."""
+
+        async def event_generator():
+            if log_buffer is None:
+                yield f"data: {json.dumps({'timestamp': '', 'level': 'INFO', 'message': 'Log buffer not available'})}\n\n"
+                return
+
+            last_len = len(log_buffer)
+            sent: set[str] = set()
+            for entry in log_buffer:
+                tag = f"{entry.get('timestamp', '')}|{entry.get('level', '')}|{entry.get('message', '')}"
+                sent.add(tag)
+
+            while True:
+                try:
+                    if await request.is_disconnected():
+                        break
+                    current_len = len(log_buffer)
+                    if current_len > last_len:
+                        new_entries = list(log_buffer)[last_len - current_len if last_len > 0 else 0:]
+                        for entry in new_entries:
+                            tag = f"{entry.get('timestamp', '')}|{entry.get('level', '')}|{entry.get('message', '')}"
+                            if tag not in sent:
+                                sent.add(tag)
+                                yield f"data: {json.dumps(entry)}\n\n"
+                        last_len = current_len
+                    await asyncio.sleep(0.5)
+                except asyncio.CancelledError:
+                    break
+
+        return StreamingResponse(event_generator(), media_type="text/event-stream")
 
     # ── radarr ───────────────────────────────────────────────────
 

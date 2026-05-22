@@ -4,6 +4,7 @@ import BazarrPage from "./pages/BazarrPage";
 import ChatPage from "./pages/ChatPage";
 import Dashboard from "./pages/Dashboard";
 import HelpPage from "./pages/HelpPage";
+import InspectorPage from "./pages/InspectorPage";
 import LidarrPage from "./pages/LidarrPage";
 import LoggerPage from "./pages/LoggerPage";
 import OrchestratePage from "./pages/OrchestratePage";
@@ -28,6 +29,7 @@ export default function App() {
 				<Route path="bazarr" element={<BazarrPage />} />
 				<Route path="orchestrate" element={<OrchestratePage />} />
 				<Route path="chat" element={<ChatPage />} />
+				<Route path="inspector" element={<InspectorPage />} />
 				<Route path="logger" element={<LoggerPage />} />
 				<Route path="help" element={<HelpPage />} />
 				<Route path="settings" element={<SettingsPage />} />

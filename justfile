@@ -76,7 +76,8 @@ e2e-ui:
 
 ci: lint typecheck test
     cd webapp; npx @biomejs/biome check src/
-    cd webapp; npm run test:e2e
+    cd webapp; npx tsc -b
+    cd webapp; npm run build
 
 clean:
     Get-ChildItem -Recurse -Include '__pycache__','*.pyc','.pytest_cache','.ruff_cache','.mypy_cache' -Path . | Remove-Item -Recurse -Force

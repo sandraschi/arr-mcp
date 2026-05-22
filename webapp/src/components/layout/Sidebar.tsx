@@ -1,5 +1,6 @@
 import {
 	BookOpen,
+	Bot,
 	Film,
 	HelpCircle,
 	LayoutDashboard,
@@ -29,6 +30,7 @@ const navItems = [
 ];
 
 const bottomItems = [
+	{ to: "/inspector", icon: Bot, label: "Inspector" },
 	{ to: "/chat", icon: MessageSquare, label: "Chat" },
 	{ to: "/logger", icon: ScrollText, label: "Logger" },
 	{ to: "/help", icon: HelpCircle, label: "Help" },

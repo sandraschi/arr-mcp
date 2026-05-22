@@ -1,11 +1,12 @@
 import { Activity, Download, Filter, Pause, Play, Trash2 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { fetchLogs } from "../utils/api";
+import { API_BASE, fetchLogs } from "../utils/api";
 
 export default function LoggerPage() {
 	const [lines, setLines] = useState<{ timestamp: string; level: string; message: string }[]>([]);
 	const [paused, setPaused] = useState(false);
 	const [connected, setConnected] = useState(false);
+	const [sse, setSse] = useState(false);
 	const [error, setError] = useState("");
 	const [filter, setFilter] = useState("");
 	const pausedRef = useRef(false);
@@ -17,30 +18,62 @@ export default function LoggerPage() {
 
 	useEffect(() => {
 		let mounted = true;
-		async function poll() {
+		let interval: ReturnType<typeof setInterval> | null = null;
+
+		const es = new EventSource(`${API_BASE}/api/logs/stream`);
+		es.onopen = () => {
+			if (mounted) setSse(true);
+		};
+		es.onmessage = (ev) => {
+			if (!mounted || pausedRef.current) return;
 			try {
-				const json = await fetchLogs(200);
-				if (mounted && json.data) {
-					setLines((prev) => {
-						const existing = new Set(prev.map((e) => `${e.timestamp}|${e.level}|${e.message}`));
-						const fresh = json.data.filter((e) => !existing.has(`${e.timestamp}|${e.level}|${e.message}`));
-						return fresh.length > 0 ? [...fresh, ...prev].slice(0, 500) : prev;
-					});
-					setConnected(true);
-					setError("");
+				const entry = JSON.parse(ev.data);
+				if (entry?.message) {
+					setLines((prev) =>
+						[{ timestamp: entry.timestamp || "", level: entry.level || "INFO", message: entry.message }, ...prev].slice(
+							0,
+							500,
+						),
+					);
+					if (mounted) {
+						setConnected(true);
+						setError("");
+					}
 				}
-			} catch (e) {
-				if (mounted) {
-					setConnected(false);
-					setError(String(e));
-				}
+			} catch {
+				/* skip malformed */
 			}
-		}
-		poll();
-		const interval = setInterval(poll, 2000);
+		};
+		es.onerror = () => {
+			es.close();
+			if (!mounted) return;
+			setSse(false);
+			interval = setInterval(async () => {
+				try {
+					const json = await fetchLogs(200);
+					if (!mounted) return;
+					if (json.data) {
+						setLines((prev) => {
+							const existing = new Set(prev.map((e) => `${e.timestamp}|${e.level}|${e.message}`));
+							const fresh = json.data.filter((e) => !existing.has(`${e.timestamp}|${e.level}|${e.message}`));
+							return fresh.length > 0 ? [...fresh, ...prev].slice(0, 500) : prev;
+						});
+						setConnected(true);
+						setError("");
+					}
+				} catch (e) {
+					if (mounted) {
+						setConnected(false);
+						setError(String(e));
+					}
+				}
+			}, 2000);
+		};
+
 		return () => {
 			mounted = false;
-			clearInterval(interval);
+			es.close();
+			if (interval) clearInterval(interval);
 		};
 	}, []);
 
@@ -78,7 +111,7 @@ export default function LoggerPage() {
 							connected ? "border-emerald-500/30 text-emerald-400" : "border-red-500/30 text-red-400"
 						}`}
 					>
-						{connected ? `${lines.length} entries` : error || "disconnected"}
+						{sse ? "SSE" : `${lines.length} entries`} {!connected && (error || "disconnected")}
 					</span>
 					<button
 						type="button"
@@ -114,7 +147,7 @@ export default function LoggerPage() {
 			<div className="bg-zinc-900 border border-zinc-800 rounded-xl overflow-hidden">
 				<div className="px-4 py-2 border-b border-zinc-800 flex items-center justify-between text-sm text-zinc-400">
 					<span className="flex items-center gap-2">
-						<Activity size={10} className="text-emerald-500" /> /api/logs (poll 2s)
+						<Activity size={10} className="text-emerald-500" /> {sse ? "/api/logs/stream (SSE)" : "/api/logs (poll 2s)"}
 					</span>
 					<span>{display.length} lines</span>
 				</div>
@@ -126,13 +159,7 @@ export default function LoggerPage() {
 							<div key={`${entry.timestamp}-${i}`} className="hover:bg-zinc-800/30 py-px">
 								<span className="text-zinc-600">{entry.timestamp}</span>{" "}
 								<span
-									className={`font-semibold ${
-										entry.level === "ERROR"
-											? "text-red-400"
-											: entry.level === "WARNING"
-												? "text-yellow-400"
-												: "text-zinc-400"
-									}`}
+									className={`font-semibold ${entry.level === "ERROR" ? "text-red-400" : entry.level === "WARNING" ? "text-yellow-400" : "text-zinc-400"}`}
 								>
 									{entry.level}:
 								</span>{" "}
