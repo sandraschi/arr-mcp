@@ -66,7 +66,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
                         break
                     current_len = len(log_buffer)
                     if current_len > last_len:
-                        new_entries = list(log_buffer)[last_len - current_len if last_len > 0 else 0:]
+                        new_entries = list(log_buffer)[last_len - current_len if last_len > 0 else 0 :]
                         for entry in new_entries:
                             tag = f"{entry.get('timestamp', '')}|{entry.get('level', '')}|{entry.get('message', '')}"
                             if tag not in sent:

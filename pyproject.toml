@@ -26,6 +26,7 @@ dependencies = [
     "fastapi>=0.104.0",
     "uvicorn[standard]>=0.24.0",
     "rich>=13.0.0",
+    "prefab-ui>=0.18.0",
 ]
 
 [project.optional-dependencies]

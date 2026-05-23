@@ -13,7 +13,7 @@ BAZARR_DEFAULT_PORT = 6767
 JELLYFIN_DEFAULT_PORT = 8096
 
 # Tool version for all portmanteau tools
-TOOL_VERSION = "0.1.0"
+TOOL_VERSION = "1.0.0"
 
 # Maps arr service name to a display key used in log messages
 SERVICE_KEYS = {

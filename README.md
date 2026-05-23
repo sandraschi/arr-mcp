@@ -1,15 +1,28 @@
 # arr-mcp
 
+<p align="center">
+  <a href="https://github.com/sandraschi/arr-mcp"><img src="https://img.shields.io/github/stars/sandraschi/arr-mcp?style=flat-square" alt="Stars"></a>
+  <a href="https://github.com/sandraschi/arr-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"></a>
+  <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.3-7c5cfc?style=flat-square" alt="FastMCP"></a>
+  <a href=""><img src="https://img.shields.io/badge/stack-*arr-00ADD8?style=flat-square" alt="*arr Stack"></a>
+  <a href=""><img src="https://img.shields.io/badge/tests-143-success?style=flat-square" alt="Tests"></a>
+  <a href=""><img src="https://img.shields.io/badge/fleet-SOTA-6366f1?style=flat-square" alt="Fleet SOTA"></a>
+</p>
+
 FastMCP 3.3 MCP server for the complete *arr automation stack — Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr, and Bazarr — under a single MCP interface.
 
 ## Features
 
 - **7 services, 1 MCP server** — Radarr (Movies), Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books), Overseerr (Requests), Bazarr (Subtitles)
+- **25 MCP tools** — 22 portmanteau tools + 3 Prefab card tools, 109+ operations
 - **Cross-arr orchestration** — request a title, auto-routes to correct arr with Jellyfin availability check
+- **Prefab-UI cards** — `arr_health_card`, `arr_calendar_card`, `arr_stats_card` — rich interactive cards in Claude Desktop, Cursor
 - **Prowlarr indexer backbone** — unified search across all indexers
 - **Auto-discovery** — probes default ports for running *arr services; no `.env` needed for standard setups
 - **Optional services** — each arr independently configurable via `.env`, disabled services don't register tools
-- **Portmanteau tools** — one MCP tool per arr with `operation` parameter (19 tools total)
+- **FastMCP 3.3 resources** — `arr://config`, `arr://quickstart`, `arr://help`, `arr://capabilities` for agent self-discovery
+- **LLM sampling** — `arr_agentic` tool with Context injection for LLM-powered cross-arr workflows
 - **React dashboard** — 15-page webapp with health monitoring, LLM chat, MCP Inspector, live SSE log streaming
 - **Local LLM chat** — built-in chat page with Ollama and LM Studio model selection
 - **PWA** — installable as desktop/mobile app with offline service worker
@@ -17,7 +30,7 @@ FastMCP 3.3 MCP server for the complete *arr automation stack — Radarr, Sonarr
 - **Real-time logs** — SSE stream endpoint `/api/logs/stream` for live log viewing
 - **Browser notifications** — desktop alerts for download completions / request approvals
 - **Tauri 2.0 native** — single `.exe` installer bundling Python backend via PyInstaller
-- **CI/CD** — GitHub Actions (ruff + pytest + biome + tsc), Playwright e2e smoke tests
+- **CI/CD** — GitHub Actions (ruff + pytest + biome + tsc), 143 tests, Playwright e2e smoke tests
 
 ## Quick Start
 
@@ -84,14 +97,15 @@ npm run dev        # → http://localhost:10939
 ```
 arr-mcp/
 ├── src/arr_mcp/             # Python backend (FastMCP 3.3)
-│   ├── services/            # 7 arr clients + Jellyfin bridge
-│   ├── tools/               # 19 portmanteau MCP tools
+│   ├── services/            # 8 arr clients (BaseArrClient + 7 arrs)
+│   ├── tools/               # 25 MCP tools (22 portmanteau + 3 prefab cards)
+│   ├── prefabs.py           # Prefab-UI card builders (health, calendar, stats, orchestrate)
 │   ├── utils/               # Jellyfin bridge
 │   ├── api.py               # REST router with /api/{service}/summary
-│   ├── app.py               # FastMCP singleton
+│   ├── app.py               # FastMCP singleton, lifespan, resources, prompts
 │   ├── server.py            # Entry point, auto-discovery, log buffer
 │   ├── config.py            # Pydantic v2 config + .env loading
-│   └── transport.py         # STDIO/HTTP/SSE + FastAPI CORS wrapper
+│   └── transport.py         # STDIO/HTTP/SSE + FastMCP 3.3 env vars
 ├── webapp/                  # React 19 + Vite + Tailwind
 │   ├── src/pages/           # 15 page components
 │   ├── src/utils/           # apiFetch<T>(), notifications, LLM client
@@ -103,7 +117,7 @@ arr-mcp/
 │   ├── capabilities/        # Tauri 2.0 permission model
 │   ├── icons/               # App icons
 │   └── build-sidecar.ps1    # PyInstaller → binaries/
-├── tests/                   # pytest + pytest-httpx (101 tests)
+├── tests/                   # pytest + pytest-httpx (143 tests)
 ├── docker-compose.yml       # Full *arr stack (8 services)
 ├── .github/workflows/ci.yml # GitHub Actions (ruff + pytest + biome + tsc)
 ├── justfile                 # Fleet-standard recipes
@@ -119,7 +133,7 @@ just start         # run MCP server
 just webapp        # start React dev server
 just lint          # ruff check
 just typecheck     # mypy
-just test          # pytest with coverage (101 tests)
+just test          # pytest with coverage (143 tests)
 just e2e           # Playwright e2e (starts backend + webapp)
 just ci            # lint + typecheck + test + webapp build
 just tauri-build   # full native installer

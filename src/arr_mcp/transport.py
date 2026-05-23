@@ -52,6 +52,10 @@ def _run_http(
 ) -> None:
     import uvicorn
 
+    # FastMCP 3.3+ uses env vars for these (constructor kwargs removed)
+    os.environ.setdefault("FASTMCP_STATELESS_HTTP", "1")
+    os.environ.setdefault("FASTMCP_LOG_LEVEL", os.getenv("ARR_MCP_LOG_LEVEL", "INFO"))
+
     app = FastAPI(title=server_name, version=__version__)
 
     app.add_middleware(

@@ -1,5 +1,17 @@
 # Changelog
 
+## 1.2.0 (2026-05-22)
+
+- **Prefab-UI cards**: `arr_health_card`, `arr_calendar_card`, `arr_stats_card` — rich interactive cards in supporting MCP clients (Claude Desktop, Cursor)
+- **FastMCP 3.3+ compliance**: set `FASTMCP_STATELESS_HTTP=1` and `FASTMCP_LOG_LEVEL` via env; removed deprecated constructor kwargs (`debug`, `log_level`, `stateless_http`)
+- **Additional resources**: `arr://quickstart`, `arr://help`, `arr://capabilities` — agent-self-discovery resources
+- **Additional prompt**: `stack_health_check` — prompt for probing the full *arr stack
+- **`sampling_handler_behavior="fallback"`** — explicit sampling fallback on FastMCP instance
+- **Context injection**: fixed `Context` import (try/except fleet pattern), `arr_agentic` uses proper `Context | None` type
+- **Calendar fix**: replaced `__import__("datetime").timedelta` with proper `from datetime import timedelta` import
+- **Tool count**: 25 tools (22 portmanteau + 3 Prefab card tools), 109+ operations
+- Ruff clean, mypy clean, 143 tests passing
+
 ## 1.1.0 (2026-05-21)
 
 - GitHub Actions CI: backend (ruff + pytest + cov) + webapp (biome + tsc + build)

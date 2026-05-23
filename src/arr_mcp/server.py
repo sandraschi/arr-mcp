@@ -32,11 +32,14 @@ from arr_mcp.services.prowlarr_service import ProwlarrClient
 from arr_mcp.services.radarr_service import RadarrClient
 from arr_mcp.services.readarr_service import ReadarrClient
 from arr_mcp.services.sonarr_service import SonarrClient
+from arr_mcp.tools.agentic import register_agentic_tools
 from arr_mcp.tools.bazarr_tools import register_bazarr_tools
 from arr_mcp.tools.cross_arr_tools import register_cross_arr_tools
 from arr_mcp.tools.health_tools import register_health_tools
+from arr_mcp.tools.help_tools import register_help_tools
 from arr_mcp.tools.lidarr_tools import register_lidarr_tools
 from arr_mcp.tools.overseerr_tools import register_overseerr_tools
+from arr_mcp.tools.prefab_tools import register_prefab_tools
 from arr_mcp.tools.prowlarr_tools import register_prowlarr_tools
 from arr_mcp.tools.radarr_tools import register_radarr_tools
 from arr_mcp.tools.readarr_tools import register_readarr_tools
@@ -117,6 +120,9 @@ def main() -> None:
     register_bazarr_tools(mcp, bazarr_client)
     register_cross_arr_tools(mcp, clients, config)
     register_health_tools(mcp, clients)
+    register_help_tools(mcp)
+    register_agentic_tools(mcp, clients)
+    register_prefab_tools(mcp, clients)
 
     registered_count = sum(1 for c in clients.values() if c is not None)
     logger.info("Registered tools for %d/%d services", registered_count, len(clients))

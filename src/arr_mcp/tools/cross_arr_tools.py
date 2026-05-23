@@ -11,7 +11,7 @@ entire stack.
 from __future__ import annotations
 
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from typing import Annotated, Literal
 
 from pydantic import Field
@@ -209,20 +209,14 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
                 end_str = now.strftime("%Y-%m-%dT23:59:59Z")
             elif operation == "week":
                 start_str = now.strftime("%Y-%m-%dT00:00:00Z")
-                end_of_week = (
-                    now.replace(hour=23, minute=59, second=59)
-                    + (now.replace(hour=0, minute=0, second=0) - now)
-                    + (  # type: ignore[operator]
-                        __import__("datetime").timedelta(days=6)
-                    )
-                )
+                end_of_week = now + timedelta(days=6)
                 end_str = end_of_week.strftime("%Y-%m-%dT23:59:59Z")
             elif operation == "range":
                 start_str = start or now.strftime("%Y-%m-%dT00:00:00Z")
                 end_str = end or now.strftime("%Y-%m-%dT23:59:59Z")
             else:
                 start_str = now.strftime("%Y-%m-%dT00:00:00Z")
-                end_str = (now + __import__("datetime").timedelta(days=30)).strftime("%Y-%m-%dT23:59:59Z")
+                end_str = (now + timedelta(days=30)).strftime("%Y-%m-%dT23:59:59Z")
 
             results: dict[str, list[dict]] = {}
             type_filter = [MediaType(t) for t in types] if types else None
