@@ -4,7 +4,7 @@
 
 | Field | Value |
 |-------|-------|
-| Package | `schip-mcp-arr` v0.1.0 |
+| Package | `arr-mcp` v0.1.0 |
 | Repo | `sandraschi/arr-mcp` |
 | Ports | 10856 (backend) / 10857 (frontend) |
 | Python | >=3.12 |
@@ -483,7 +483,7 @@ ARR_TIMEOUT=30
 
 ```toml
 [project]
-name = "schip-mcp-arr"
+name = "arr-mcp"
 version = "0.1.0"
 requires-python = ">=3.12"
 dependencies = [
