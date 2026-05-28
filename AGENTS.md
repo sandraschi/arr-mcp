@@ -55,3 +55,5 @@ Tools are registered **imperatively** via `register_*_tools(mcp, client)` functi
 |---------|------|
 | arr-mcp backend | 10938 |
 | arr-mcp frontend | 10939 |
+
+Install docs: follow mcp-central-docs/standards/AGENT_INSTALL_REFERENCE.md
