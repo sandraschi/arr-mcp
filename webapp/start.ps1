@@ -11,16 +11,17 @@ $Root = Split-Path -Parent $PSScriptRoot
 Get-NetTCPConnection -LocalPort $BackendPort -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
 Get-NetTCPConnection -LocalPort $FrontendPort -ErrorAction SilentlyContinue | ForEach-Object { Stop-Process -Id $_.OwningProcess -Force -ErrorAction SilentlyContinue }
 
-Write-Host "arr-mcp — MCP server :$BackendPort | webapp :$FrontendPort" -ForegroundColor Cyan
+Write-Host "arr-mcp - MCP server :$BackendPort | webapp :$FrontendPort" -ForegroundColor Cyan
 
 # Start MCP backend in HTTP mode
+$PythonExe = Join-Path $Root ".venv" | Join-Path -ChildPath "Scripts" | Join-Path -ChildPath "python.exe"
 $backendJob = Start-Job -ScriptBlock {
     Set-Location $using:Root
     $env:ARR_MCP_TRANSPORT = "http"
     $env:ARR_MCP_HOST = "127.0.0.1"
     $env:ARR_MCP_PORT = $using:BackendPort
     try {
-        & "$using:Root\.venv\Scripts\python.exe" -m arr_mcp 2>&1
+        & $using:PythonExe -m arr_mcp 2>&1
     } catch {
         # Try uv run as fallback
         uv run arr-mcp 2>&1
@@ -37,7 +38,7 @@ for ($i = 0; $i -lt 30; $i++) {
 }
 
 if (-not $ready) {
-    Write-Host "Backend failed to start — check logs" -ForegroundColor Red
+    Write-Host "Backend failed to start - check logs" -ForegroundColor Red
     Stop-Job $backendJob -ErrorAction SilentlyContinue
     exit 1
 }
@@ -71,7 +72,7 @@ if ($frontendReady -and -not $NoBrowser) {
 
 Pop-Location
 
-Write-Host "arr-mcp running — Ctrl+C to stop" -ForegroundColor Green
+Write-Host "arr-mcp running - Ctrl+C to stop" -ForegroundColor Green
 Write-Host "  Dashboard:  http://localhost:$FrontendPort" -ForegroundColor Gray
 
 try {

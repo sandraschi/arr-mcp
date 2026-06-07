@@ -1,7 +1,7 @@
-set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
+﻿set windows-shell := ["pwsh.exe", "-NoLogo", "-Command"]
 
 default:
-    @pwsh.exe -NoProfile -ExecutionPolicy Bypass -File ../mcp-central-docs/scripts/just-dashboard.ps1 -Path .
+    @just --list
 
 version:
     uv run python -c "from arr_mcp import __version__; print(__version__)"
@@ -81,3 +81,4 @@ ci: lint typecheck test
 
 clean:
     Get-ChildItem -Recurse -Include '__pycache__','*.pyc','.pytest_cache','.ruff_cache','.mypy_cache' -Path . | Remove-Item -Recurse -Force
+
