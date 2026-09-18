@@ -27,28 +27,19 @@ fix-webapp:
     cd webapp; npx @biomejs/biome check src/ --write
 
 build-native:
-    Set-Location '{{justfile_directory()}}\native'
-    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-    .\build.ps1
+    Set-Location '{{justfile_directory()}}\native'; $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; .\build.ps1
 
 build-native-debug:
-    Set-Location '{{justfile_directory()}}\native'
-    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-    npx @tauri-apps/cli build --debug
+    Set-Location '{{justfile_directory()}}\native'; $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; npx @tauri-apps/cli build --debug
 
 tauri-sidecar:
     powershell.exe -NoProfile -File '{{justfile_directory()}}\native\build-sidecar.ps1'
 
 tauri-build:
-    Set-Location '{{justfile_directory()}}\native'
-    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-    .\build.ps1
+    Set-Location '{{justfile_directory()}}\native'; $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; .\build.ps1
 
 tauri-dev:
-    Set-Location '{{justfile_directory()}}\native'
-    $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"
-    npm install
-    npx @tauri-apps/cli dev
+    Set-Location '{{justfile_directory()}}\native'; $env:Path = "$env:USERPROFILE\.cargo\bin;$env:Path"; npm install; npx @tauri-apps/cli dev
 
 lint:
     uv run ruff check src/arr_mcp tests/
@@ -68,12 +59,10 @@ test:
     uv run pytest -v --cov=arr_mcp --cov-report=term-missing
 
 e2e:
-    Set-Location '{{justfile_directory()}}\webapp'
-    npm run test:e2e
+    Set-Location '{{justfile_directory()}}\webapp'; npm run test:e2e
 
 e2e-ui:
-    Set-Location '{{justfile_directory()}}\webapp'
-    npm run test:e2e:ui
+    Set-Location '{{justfile_directory()}}\webapp'; npm run test:e2e:ui
 
 ci: lint typecheck test
     cd webapp; npx @biomejs/biome check src/
