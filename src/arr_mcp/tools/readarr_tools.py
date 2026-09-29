@@ -5,9 +5,10 @@ from __future__ import annotations
 import logging
 from typing import Annotated, Literal
 
-from pydantic import Field
+from pydantic import Field, StrictInt
 
 from arr_mcp.constants import TOOL_VERSION
+from arr_mcp.tools.readarr_book_mutations import register_readarr_book_mutation_tools
 
 logger = logging.getLogger(__name__)
 
@@ -100,15 +101,22 @@ def register_readarr_tools(mcp, client) -> None:
     )
     async def readarr_books(
         operation: Annotated[
-            Literal["list", "get", "lookup", "set_monitored"],
-            Field(description="Operation: list books, get by ID, lookup by term, set monitored status."),
+            Literal["list", "get", "lookup", "search", "set_monitored"],
+            Field(description="Operation: list, get, metadata lookup, native download search, or set monitored status."),
         ],
         author_id: Annotated[int | None, Field(description="Author ID for listing books.")] = None,
-        book_id: Annotated[int | None, Field(description="Book ID for get/set_monitored.")] = None,
+        book_id: Annotated[StrictInt | None, Field(description="Exact Readarr book ID for get/search/set_monitored.")] = None,
         term: Annotated[str | None, Field(description="Search term for lookup.")] = None,
         monitored: Annotated[bool, Field(description="Monitored status for set_monitored.")] = True,
     ) -> dict:
-        """Manage Readarr books: list, get, lookup, set monitored.
+        """Manage Readarr books: list, get, lookup, search, set monitored.
+
+        ``lookup`` finds book metadata. ``search`` starts Readarr's native
+        BookSearch for one existing book and may enqueue a matching download.
+        Search uses that author's current quality profile and download settings.
+        The returned command ID/status confirms submission, not a completed
+        download. To search while adding, use readarr_add_book with
+        search_for_new_book=true.
 
         ## Return Format
         {"success": bool, "message": str, "data": [...]}
@@ -116,6 +124,7 @@ def register_readarr_tools(mcp, client) -> None:
         ## Examples
         readarr_books(operation="list", author_id=1)
         readarr_books(operation="lookup", term="The Way of Kings")
+        readarr_books(operation="search", book_id=5)
         readarr_books(operation="set_monitored", book_id=5, monitored=False)
         """
         try:
@@ -135,6 +144,23 @@ def register_readarr_tools(mcp, client) -> None:
                 data = await client.lookup_book(term)
                 return {"success": True, "message": f"Found {len(data)} results for '{term}'", "data": data}
 
+            if operation == "search":
+                if isinstance(book_id, bool) or not isinstance(book_id, int) or book_id <= 0:
+                    return {"success": False, "message": "A positive exact book_id is required for search", "data": {}}
+                book = await client.get_book(book_id)
+                if not isinstance(book, dict) or type(book.get("id")) is not int or book["id"] != book_id:
+                    return {
+                        "success": False,
+                        "message": f"Readarr returned a mismatched book ID for requested book {book_id}; search was not started",
+                        "data": {},
+                    }
+                command = await client.trigger_command("BookSearch", bookIds=[book_id])
+                return {
+                    "success": True,
+                    "message": f"Submitted Readarr search for '{book.get('title', book_id)}' (book {book_id})",
+                    "data": command,
+                }
+
             if operation == "set_monitored":
                 if not book_id:
                     return {"success": False, "message": "book_id is required for set_monitored", "data": {}}
@@ -146,3 +172,5 @@ def register_readarr_tools(mcp, client) -> None:
         except Exception as e:
             logger.exception("readarr_books failed: %s", e)
             return {"success": False, "message": str(e), "data": {}}
+
+    register_readarr_book_mutation_tools(mcp, client)

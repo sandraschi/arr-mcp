@@ -62,10 +62,13 @@ class RadarrClient(BaseArrClient):
         }
         return await self._post(f"{self.api_path}/movie", json=payload)
 
-    async def delete_movie(self, movie_id: int, delete_files: bool = False) -> dict[str, Any]:
+    async def delete_movie(
+        self, movie_id: int, delete_files: bool = False, add_import_list_exclusion: bool = False
+    ) -> dict[str, Any]:
         return await self._delete(  # type: ignore[return-value]
             f"{self.api_path}/movie/{movie_id}",
             deleteFiles=delete_files,
+            addImportExclusion=add_import_list_exclusion,
         )
 
     async def update_movie(self, movie_id: int, **fields: Any) -> dict[str, Any]:

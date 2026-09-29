@@ -66,6 +66,8 @@ class OverseerrClient:
         client = await self._ensure_client()
         resp = await client.delete(path, params=params)
         resp.raise_for_status()
+        if not resp.content.strip():
+            return {}
         return resp.json()
 
     # ── status ────────────────────────────────────────────────────

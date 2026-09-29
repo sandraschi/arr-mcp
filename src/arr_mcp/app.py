@@ -140,9 +140,9 @@ def create_mcp(config: ArrConfig) -> FastMCP:
         return (
             f"# arr-mcp v{__version__} Tool Reference\n\n"
             "## Per-Service Tools\n"
-            "- `radarr_movies` — movie lifecycle (list, lookup, add, delete, update, import)\n"
-            "- `sonarr_series` — series lifecycle (list, lookup, add, delete, update)\n"
-            "- `sonarr_episodes` — episode management (list, get, search, set_monitored)\n"
+            "- `radarr_movies` — movie lifecycle (list, lookup, add, search, delete, update, import)\n"
+            "- `sonarr_series` — series lifecycle (list, lookup, add, search, delete, update)\n"
+            "- `sonarr_episodes` — episode management (list, get, search an episode or season, set_monitored)\n"
             "- `lidarr_artists` — artist lifecycle (list, lookup, add, delete, update)\n"
             "- `lidarr_albums` — album management (list, get, lookup, set_monitored)\n"
             "- `readarr_authors` — author lifecycle (list, lookup, add, delete, update)\n"

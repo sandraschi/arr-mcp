@@ -64,10 +64,13 @@ class SonarrClient(BaseArrClient):
         }
         return await self._post(f"{self.api_path}/series", json=payload)
 
-    async def delete_series(self, series_id: int, delete_files: bool = False) -> dict[str, Any]:
+    async def delete_series(
+        self, series_id: int, delete_files: bool = False, add_import_list_exclusion: bool = False
+    ) -> dict[str, Any]:
         return await self._delete(  # type: ignore[return-value]
             f"{self.api_path}/series/{series_id}",
             deleteFiles=delete_files,
+            addImportListExclusion=add_import_list_exclusion,
         )
 
     async def update_series(self, series_id: int, **fields: Any) -> dict[str, Any]:

@@ -17,17 +17,17 @@ logger = logging.getLogger(__name__)
 
 _TOOL_REGISTRY: dict[str, dict[str, Any]] = {
     "arr_radarr": {
-        "description": "Radarr movie management — list, lookup, add, delete, update, import.",
-        "operations": ["list", "lookup", "get", "add", "delete", "update", "import"],
+        "description": "Radarr movie management — list, lookup, add, search, delete, update, import.",
+        "operations": ["list", "lookup", "get", "add", "search", "delete", "update", "import"],
         "service": "radarr",
     },
     "arr_sonarr_series": {
-        "description": "Sonarr series management — list, lookup, add, delete, update.",
-        "operations": ["list", "lookup", "get", "add", "delete", "update"],
+        "description": "Sonarr series management — list, lookup, add, search, delete, update.",
+        "operations": ["list", "lookup", "get", "add", "search", "delete", "update"],
         "service": "sonarr",
     },
     "arr_sonarr_episodes": {
-        "description": "Sonarr episode management — list, get, search, set_monitored.",
+        "description": "Sonarr episode management — list, get, search an episode or season, set_monitored.",
         "operations": ["list", "get", "search", "set_monitored"],
         "service": "sonarr",
     },
@@ -47,8 +47,8 @@ _TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "service": "readarr",
     },
     "arr_readarr_books": {
-        "description": "Readarr book management — list, get, lookup, set_monitored.",
-        "operations": ["list", "get", "lookup", "set_monitored"],
+        "description": "Readarr book management — list, get, metadata lookup, native download search, set_monitored.",
+        "operations": ["list", "get", "lookup", "search", "set_monitored"],
         "service": "readarr",
     },
     "arr_prowlarr_indexers": {
