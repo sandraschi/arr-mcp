@@ -1,4 +1,4 @@
-"""Sonarr response models — series, episodes, episode files."""
+"""Sonarr response models - series, episodes, episode files."""
 
 from __future__ import annotations
 

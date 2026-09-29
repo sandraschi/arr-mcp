@@ -1,6 +1,6 @@
 """Bazarr HTTP client (Subtitles).
 
-Bazarr is NOT Servarr-based — it is a standalone Python application with its
+Bazarr is NOT Servarr-based - it is a standalone Python application with its
 own REST API on port 6767.  This client implements direct HTTP calls to the
 Bazarr API endpoints.
 

@@ -1,4 +1,4 @@
-"""Readarr response models — authors, books, editions."""
+"""Readarr response models - authors, books, editions."""
 
 from __future__ import annotations
 

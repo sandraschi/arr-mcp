@@ -1,1 +1,1 @@
-"""Service package — arr-specific HTTP clients."""
+"""Service package - arr-specific HTTP clients."""
