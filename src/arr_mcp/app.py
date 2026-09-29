@@ -1,4 +1,4 @@
-"""FastMCP application — singleton, lifespan, resources, prompts.
+"""FastMCP application - singleton, lifespan, resources, prompts.
 
 Creates the FastMCP instance with sampling handler and lifespan management.
 Follows the fleet pattern from jellyfin-mcp and plex-mcp.
@@ -65,7 +65,7 @@ def create_mcp(config: ArrConfig) -> FastMCP:
     async def lifespan(mcp: FastMCP):
         """Manage service client lifecycle."""
         logger.info(
-            "arr-mcp starting — services: radarr=%s sonarr=%s lidarr=%s prowlarr=%s readarr=%s overseerr=%s bazarr=%s",
+            "arr-mcp starting - services: radarr=%s sonarr=%s lidarr=%s prowlarr=%s readarr=%s overseerr=%s bazarr=%s",
             config.radarr.is_configured,
             config.sonarr.is_configured,
             config.lidarr.is_configured,
@@ -90,7 +90,7 @@ def create_mcp(config: ArrConfig) -> FastMCP:
             "with automatic Jellyfin availability checking, and the per-arr tools "
             "(radarr_movies, sonarr_series, lidarr_artists, readarr_authors, "
             "prowlarr_search, bazarr_subtitles) for domain-specific operations. "
-            "All arrs are optional — tools only appear for configured services."
+            "All arrs are optional - tools only appear for configured services."
         ),
         on_duplicate="replace",
         strict_input_validation=True,
@@ -128,7 +128,7 @@ def create_mcp(config: ArrConfig) -> FastMCP:
             f"# arr-mcp v{__version__} Quickstart\n\n"
             "1. **Health check**: Call `arr_health` to see which services are reachable.\n"
             "2. **Search for media**: Use `radarr_movies(operation='lookup', title='...')` or `sonarr_series(operation='lookup', title='...')`.\n"
-            "3. **Add media**: Use `arr_orchestrate(operation='request', title='...', media_type='movie')` — it checks Jellyfin first.\n"
+            "3. **Add media**: Use `arr_orchestrate(operation='request', title='...', media_type='movie')` - it checks Jellyfin first.\n"
             "4. **Cross-search**: `prowlarr_search(query='...')` searches all configured indexers.\n"
             "5. **Stack overview**: `arr_stats(operation='summary')` for disk, queue, and history across all arrs.\n"
             "6. **Calendar**: `arr_calendar(operation='upcoming')` for unified calendar across all arrs.\n"
@@ -140,28 +140,28 @@ def create_mcp(config: ArrConfig) -> FastMCP:
         return (
             f"# arr-mcp v{__version__} Tool Reference\n\n"
             "## Per-Service Tools\n"
-            "- `radarr_movies` — movie lifecycle (list, lookup, add, delete, update, import)\n"
-            "- `sonarr_series` — series lifecycle (list, lookup, add, delete, update)\n"
-            "- `sonarr_episodes` — episode management (list, get, search, set_monitored)\n"
-            "- `lidarr_artists` — artist lifecycle (list, lookup, add, delete, update)\n"
-            "- `lidarr_albums` — album management (list, get, lookup, set_monitored)\n"
-            "- `readarr_authors` — author lifecycle (list, lookup, add, delete, update)\n"
-            "- `readarr_books` — book management (list, get, lookup, set_monitored)\n"
-            "- `prowlarr_indexers` — indexer lifecycle (list, get, add, update, delete, test)\n"
-            "- `prowlarr_search` — unified search across all indexers\n"
-            "- `prowlarr_applications` — connected *arr app management\n"
-            "- `prowlarr_history` — indexer history and statistics\n"
-            "- `bazarr_subtitles` — subtitle search, download, history\n"
-            "- `overseerr_requests` — media request management (list, approve, decline)\n"
-            "- `overseerr_search` — search Overseerr\n"
-            "- `overseerr_users` — Overseerr user management\n"
+            "- `radarr_movies` - movie lifecycle (list, lookup, add, delete, update, import)\n"
+            "- `sonarr_series` - series lifecycle (list, lookup, add, delete, update)\n"
+            "- `sonarr_episodes` - episode management (list, get, search, set_monitored)\n"
+            "- `lidarr_artists` - artist lifecycle (list, lookup, add, delete, update)\n"
+            "- `lidarr_albums` - album management (list, get, lookup, set_monitored)\n"
+            "- `readarr_authors` - author lifecycle (list, lookup, add, delete, update)\n"
+            "- `readarr_books` - book management (list, get, lookup, set_monitored)\n"
+            "- `prowlarr_indexers` - indexer lifecycle (list, get, add, update, delete, test)\n"
+            "- `prowlarr_search` - unified search across all indexers\n"
+            "- `prowlarr_applications` - connected *arr app management\n"
+            "- `prowlarr_history` - indexer history and statistics\n"
+            "- `bazarr_subtitles` - subtitle search, download, history\n"
+            "- `overseerr_requests` - media request management (list, approve, decline)\n"
+            "- `overseerr_search` - search Overseerr\n"
+            "- `overseerr_users` - Overseerr user management\n"
             "## Cross-Arr Tools\n"
-            "- `arr_health` — stack-wide health probe\n"
-            "- `arr_orchestrate` — search & add across arrs + Jellyfin availability check\n"
-            "- `arr_calendar` — unified calendar (upcoming, today, week, range)\n"
-            "- `arr_stats` — consolidated statistics (summary, disk, queues, history)\n"
-            "- `arr_agentic` — LLM-powered cross-arr workflows\n"
-            "- `arr_help` — tool discovery and quickstart\n"
+            "- `arr_health` - stack-wide health probe\n"
+            "- `arr_orchestrate` - search & add across arrs + Jellyfin availability check\n"
+            "- `arr_calendar` - unified calendar (upcoming, today, week, range)\n"
+            "- `arr_stats` - consolidated statistics (summary, disk, queues, history)\n"
+            "- `arr_agentic` - LLM-powered cross-arr workflows\n"
+            "- `arr_help` - tool discovery and quickstart\n"
         )
 
     @mcp.resource("arr://capabilities")

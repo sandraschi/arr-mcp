@@ -1,4 +1,4 @@
-"""Constants for the *arr stack — ports, API versions, enums."""
+"""Constants for the *arr stack - ports, API versions, enums."""
 
 from enum import StrEnum
 

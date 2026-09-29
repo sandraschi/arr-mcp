@@ -1,4 +1,4 @@
-"""REST API router — exposes per-service data for the webapp dashboard.
+"""REST API router - exposes per-service data for the webapp dashboard.
 
 Each endpoint queries the corresponding *arr service client and returns
 live summary data (counts, health, queue, disk, wanted).

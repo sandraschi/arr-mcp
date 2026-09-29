@@ -1,4 +1,4 @@
-"""Server entry point — imports tools, builds ASGI, starts transport.
+"""Server entry point - imports tools, builds ASGI, starts transport.
 
 Conditionally registers tools for each configured *arr service.
 If a service is not configured, its tools are skipped.
@@ -148,7 +148,7 @@ def _create_client(
         return client_cls(url, svc_config.api_key, arr_config.timeout)
 
     logger.info(
-        "%s not configured — tools will be skipped (port %d unreachable or missing API key)",
+        "%s not configured - tools will be skipped (port %d unreachable or missing API key)",
         name,
         default_port,
     )
