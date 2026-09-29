@@ -33,7 +33,7 @@ Start-Sleep -Milliseconds 500
 # --- Start backend ---
 if (-not $FrontendOnly) {
     Write-Host "Starting backend on :$BackendPort ..." -ForegroundColor Yellow
-    $backendProc = Start-Process pwsh -NoNewWindow -PassThru -WindowStyle $WindowStyle -ArgumentList @(
+    $backendProc = Start-Process pwsh -PassThru -WindowStyle $WindowStyle -ArgumentList @(
         "-NoProfile", "-Command", "uv run python -m $BackendModule"
     )
 
@@ -67,7 +67,7 @@ if (-not $BackendOnly -and (Test-Path $WebRoot)) {
         npm install
         Pop-Location
     }
-    $frontendProc = Start-Process pwsh -NoNewWindow -PassThru -WindowStyle $WindowStyle -ArgumentList @(
+    $frontendProc = Start-Process pwsh -PassThru -WindowStyle $WindowStyle -ArgumentList @(
         "-NoProfile", "-Command", "npm run dev -- --port $FrontendPort"
     ) -WorkingDirectory $WebRoot
 
