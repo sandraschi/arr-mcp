@@ -15,7 +15,7 @@ def build_health_card(health_data: dict[str, dict]) -> Card:
     rows = []
     for name, info in services.items():
         status = "Online" if info.get("reachable") else "Offline"
-        version = info.get("version", "—") or "—"
+        version = info.get("version", "-") or "-"
         rows.append(
             Row(
                 children=[
@@ -48,7 +48,7 @@ def build_calendar_card(calendar_data: dict[str, dict]) -> Card:
                 or (item.get("author") or {}).get("authorName", "")
                 or str(item)
             )
-            date = item.get("inCinemas") or item.get("airDate") or item.get("releaseDate") or "—"
+            date = item.get("inCinemas") or item.get("airDate") or item.get("releaseDate") or "-"
             rows.append(
                 Row(
                     children=[

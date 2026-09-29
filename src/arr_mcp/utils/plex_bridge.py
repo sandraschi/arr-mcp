@@ -67,7 +67,7 @@ class PlexBridge:
     ) -> list[dict[str, Any]]:
         """Search Plex libraries for a title."""
         if not self.is_configured:
-            logger.warning("Plex not configured — skipping search")
+            logger.warning("Plex not configured - skipping search")
             return []
 
         client = await self._ensure_client()
