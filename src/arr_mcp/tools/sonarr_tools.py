@@ -1,4 +1,4 @@
-"""Sonarr portmanteau tools — series & episode management."""
+"""Sonarr portmanteau tools - series & episode management."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def register_sonarr_tools(mcp, client) -> None:
     if client is None:
-        logger.info("Sonarr not configured — skipping tools")
+        logger.info("Sonarr not configured - skipping tools")
         return
 
     @mcp.tool(

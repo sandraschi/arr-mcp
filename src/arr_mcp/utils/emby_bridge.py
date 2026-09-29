@@ -66,7 +66,7 @@ class EmbyBridge:
     ) -> list[dict[str, Any]]:
         """Search the Emby library for a title."""
         if not self.is_configured:
-            logger.warning("Emby not configured — skipping search")
+            logger.warning("Emby not configured - skipping search")
             return []
 
         if media_types is None:

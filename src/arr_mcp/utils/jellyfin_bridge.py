@@ -67,7 +67,7 @@ class JellyfinBridge:
             Max results to return.
         """
         if not self.is_configured:
-            logger.warning("Jellyfin not configured — skipping search")
+            logger.warning("Jellyfin not configured - skipping search")
             return []
 
         if media_types is None:

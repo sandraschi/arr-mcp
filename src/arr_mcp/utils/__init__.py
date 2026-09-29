@@ -1,1 +1,1 @@
-"""Utility package — Jellyfin bridge, logging helpers."""
+"""Utility package - Jellyfin bridge, logging helpers."""
