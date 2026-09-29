@@ -1,4 +1,4 @@
-"""Bazarr response models — subtitles, languages, providers."""
+"""Bazarr response models - subtitles, languages, providers."""
 
 from __future__ import annotations
 

@@ -1,6 +1,6 @@
 """Pydantic v2 response schemas for the *arr API stack.
 
-All tools return ``ToolResult`` (or a subclass) — a standard ``{"success": bool, "message": str, "data": ...}``
+All tools return ``ToolResult`` (or a subclass) - a standard ``{"success": bool, "message": str, "data": ...}``
 envelope.  Per-service data models are in their own modules.
 """
 

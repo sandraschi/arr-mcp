@@ -1,4 +1,4 @@
-"""Radarr response models — movies, movie files, quality profiles."""
+"""Radarr response models - movies, movie files, quality profiles."""
 
 from __future__ import annotations
 

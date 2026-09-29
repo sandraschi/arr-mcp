@@ -1,4 +1,4 @@
-"""Prowlarr response models — indexers, applications, search results."""
+"""Prowlarr response models - indexers, applications, search results."""
 
 from __future__ import annotations
 

@@ -1,4 +1,4 @@
-"""Lidarr response models — artists, albums, tracks."""
+"""Lidarr response models - artists, albums, tracks."""
 
 from __future__ import annotations
 
