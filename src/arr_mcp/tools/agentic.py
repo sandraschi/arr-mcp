@@ -1,4 +1,4 @@
-"""Agentic cross-arr workflow tools — LLM-powered via ``ctx.sample()``.
+"""Agentic cross-arr workflow tools - LLM-powered via ``ctx.sample()``.
 
 The ``arr_agentic`` tool uses FastMCP 3.2 sampling (SEP-1577) to orchestrate
 multi-step cross-arr operations.  It falls back gracefully when the MCP client
@@ -52,13 +52,13 @@ def register_agentic_tools(mcp, clients: dict) -> None:
     ) -> dict:
         """LLM-powered cross-arr workflows via FastMCP sampling (SEP-1577).
 
-        **workflow** — execute a multi-step cross-arr task described in natural
+        **workflow** - execute a multi-step cross-arr task described in natural
         language.  The LLM decides which tools to call.  Examples:
         - "add The Matrix to Radarr with best quality"
         - "search for Dune across all arrs and tell me if it's anywhere"
         - "find movies added this week"
 
-        **natural_query** — ask a question about your media stack.  Examples:
+        **natural_query** - ask a question about your media stack.  Examples:
         - "what's the most wanted movie right now?"
         - "how much free disk space do I have?"
         - "what's downloading right now?"
@@ -81,7 +81,7 @@ def register_agentic_tools(mcp, clients: dict) -> None:
                     available_services.append(name)
 
             stack_context = (
-                f"arr-mcp v{TOOL_VERSION} — available services: {', '.join(available_services) or 'none'}. "
+                f"arr-mcp v{TOOL_VERSION} - available services: {', '.join(available_services) or 'none'}. "
                 f"The user said: {prompt}. "
                 "Respond helpfully with what you know about the user's media stack. "
                 "If the client supports sampling, you would orchestrate tool calls here."

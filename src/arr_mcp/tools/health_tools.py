@@ -29,7 +29,7 @@ def register_health_tools(mcp, clients: dict) -> None:
             Field(description="Which service to health-check, or 'all' for stack-wide probe."),
         ] = "all",
     ) -> dict:
-        """Health-check the *arr stack — probes system status per service.
+        """Health-check the *arr stack - probes system status per service.
 
         ## Return Format
         {

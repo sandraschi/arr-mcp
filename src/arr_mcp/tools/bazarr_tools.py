@@ -1,6 +1,6 @@
-"""Bazarr portmanteau tool — subtitle management.
+"""Bazarr portmanteau tool - subtitle management.
 
-Bazarr is NOT Servarr-based — it connects to Sonarr/Radarr for media metadata
+Bazarr is NOT Servarr-based - it connects to Sonarr/Radarr for media metadata
 and manages subtitle download from various providers.  This tool feeds
 jellyfin-mcp's RAG pipeline downstream.
 """
@@ -19,7 +19,7 @@ logger = logging.getLogger(__name__)
 
 def register_bazarr_tools(mcp, client) -> None:
     if client is None:
-        logger.info("Bazarr not configured — skipping tools")
+        logger.info("Bazarr not configured - skipping tools")
         return
 
     @mcp.tool(

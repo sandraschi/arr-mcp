@@ -1,4 +1,4 @@
-"""Cross-arr orchestration tools — the differentiator.
+"""Cross-arr orchestration tools - the differentiator.
 
 The ``arr_orchestrate`` tool is arr-mcp's unique value proposition:
 given a media title, it checks Jellyfin for availability, auto-detects
@@ -76,7 +76,7 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
     ) -> dict:
         """Cross-arr orchestration: check Jellyfin/Plex/Emby, auto-route to correct arr, stack status.
 
-        **THE DIFFERENTIATOR** — chains media server availability checks
+        **THE DIFFERENTIATOR** - chains media server availability checks
         (Jellyfin + Plex + Emby) with automatic *arr routing. "I want to watch Dune"
         → checks configured media servers → if not found → auto-adds to Radarr.
 
