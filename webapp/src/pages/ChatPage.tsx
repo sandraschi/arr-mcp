@@ -20,38 +20,55 @@ interface Message {
 }
 
 const PERSONALITIES = [
-	{ id: "arr-expert", label: "*arr Expert", prompt: "You are an expert in Radarr, Sonarr, Lidarr, Readarr, and the full *arr stack." },
-	{ id: "media-curator", label: "Media Curator", prompt: "You help curate media libraries with quality and organization in mind." },
+	{
+		id: "arr-expert",
+		label: "*arr Expert",
+		prompt: "You are an expert in Radarr, Sonarr, Lidarr, Readarr, and the full *arr stack.",
+	},
+	{
+		id: "media-curator",
+		label: "Media Curator",
+		prompt: "You help curate media libraries with quality and organization in mind.",
+	},
 	{ id: "quick-summarizer", label: "Quick Summarizer", prompt: "Keep responses brief and to the point." },
 	{ id: "custom", label: "Custom", prompt: "" },
 ];
 
 const EXAMPLE_PROMPTS = [
-	{ group: "Media", items: [
-		"Show me the latest movies added",
-		"What TV shows are missing episodes?",
-		"List artists with missing albums",
-	]},
-	{ group: "Health", items: [
-		"Check all *arr service health",
-		"Find stalled downloads",
-		"Show indexer status",
-	]},
-	{ group: "Requests", items: [
-		"What movies are currently requested?",
-		"Search for a movie to add",
-		"Approve pending media requests",
-	]},
+	{
+		group: "Media",
+		items: [
+			"Show me the latest movies added",
+			"What TV shows are missing episodes?",
+			"List artists with missing albums",
+		],
+	},
+	{ group: "Health", items: ["Check all *arr service health", "Find stalled downloads", "Show indexer status"] },
+	{
+		group: "Requests",
+		items: ["What movies are currently requested?", "Search for a movie to add", "Approve pending media requests"],
+	},
 ];
 
 function loadHistory(): Message[] {
-	try { const d = localStorage.getItem(LS_KEY); return d ? JSON.parse(d) : []; } catch { return []; }
+	try {
+		const d = localStorage.getItem(LS_KEY);
+		return d ? JSON.parse(d) : [];
+	} catch {
+		return [];
+	}
 }
 function saveHistory(msgs: Message[]) {
-	try { localStorage.setItem(LS_KEY, JSON.stringify(msgs.slice(-100))); } catch {}
+	try {
+		localStorage.setItem(LS_KEY, JSON.stringify(msgs.slice(-100)));
+	} catch {}
 }
 function loadPersonality(): string {
-	try { return localStorage.getItem(PERS_KEY) || "arr-expert"; } catch { return "arr-expert"; }
+	try {
+		return localStorage.getItem(PERS_KEY) || "arr-expert";
+	} catch {
+		return "arr-expert";
+	}
 }
 
 export default function ChatPage() {
@@ -69,8 +86,12 @@ export default function ChatPage() {
 		chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
 	}, [messages]);
 
-	useEffect(() => { saveHistory(messages); }, [messages]);
-	useEffect(() => { localStorage.setItem(PERS_KEY, personalityId); }, [personalityId]);
+	useEffect(() => {
+		saveHistory(messages);
+	}, [messages]);
+	useEffect(() => {
+		localStorage.setItem(PERS_KEY, personalityId);
+	}, [personalityId]);
 
 	useEffect(() => {
 		if (config.provider !== "none") {
@@ -122,7 +143,7 @@ export default function ChatPage() {
 	}
 
 	const exportChat = () => {
-		const text = messages.map(m => `${m.role === "user" ? "You" : "Assistant"}: ${m.content}`).join("\n\n");
+		const text = messages.map((m) => `${m.role === "user" ? "You" : "Assistant"}: ${m.content}`).join("\n\n");
 		const blob = new Blob([text], { type: "text/plain" });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
@@ -141,7 +162,10 @@ export default function ChatPage() {
 					<span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded" data-testid="skill-badge">
 						arr-mcp
 					</span>
-					<span className={`inline-block w-2 h-2 rounded-full ${config.provider === "none" ? "bg-red-500" : "bg-green-500"}`} data-testid="backend-dot" />
+					<span
+						className={`inline-block w-2 h-2 rounded-full ${config.provider === "none" ? "bg-red-500" : "bg-green-500"}`}
+						data-testid="backend-dot"
+					/>
 					<span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded">
 						{config.provider === "none" ? "No LLM" : config.provider === "ollama" ? "Ollama" : "LM Studio"}
 					</span>
@@ -153,8 +177,10 @@ export default function ChatPage() {
 						className="rounded-md border border-zinc-700 bg-zinc-900 px-2 py-1 text-xs text-zinc-200"
 						data-testid="personality-select"
 					>
-						{PERSONALITIES.map(p => (
-							<option key={p.id} value={p.id}>{p.label}</option>
+						{PERSONALITIES.map((p) => (
+							<option key={p.id} value={p.id}>
+								{p.label}
+							</option>
 						))}
 					</select>
 					<button
@@ -284,7 +310,10 @@ export default function ChatPage() {
 				</div>
 			)}
 
-			<div className="flex-1 overflow-y-auto bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-4" data-testid="dashboard">
+			<div
+				className="flex-1 overflow-y-auto bg-zinc-900 border border-zinc-800 rounded-xl p-4 mb-4"
+				data-testid="dashboard"
+			>
 				<div data-testid="chat-messages">
 					{messages.length === 0 && (
 						<div className="text-center text-zinc-500 mt-20">
@@ -296,7 +325,7 @@ export default function ChatPage() {
 									: `Connected to ${config.provider === "ollama" ? "Ollama" : "LM Studio"} — select a model to begin.`}
 							</p>
 							<div className="flex flex-wrap gap-2 justify-center mt-4" data-testid="example-prompts">
-								{EXAMPLE_PROMPTS.flatMap(g => g.items).map((p, i) => (
+								{EXAMPLE_PROMPTS.flatMap((g) => g.items).map((p, i) => (
 									<button
 										key={i}
 										type="button"
