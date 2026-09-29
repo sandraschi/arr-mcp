@@ -1,0 +1,8 @@
+node_modules
+dist
+.vite
+playwright-report
+test-results
+blob-report
+.env
+*.log

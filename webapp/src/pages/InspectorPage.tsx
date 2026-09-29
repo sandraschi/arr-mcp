@@ -40,7 +40,7 @@ export default function InspectorPage() {
 	useEffect(() => {
 		if (selectedTool) {
 			const firstOp = selectedTool.operations.split(",")[0].split("(")[0].trim();
-			setParams({ operation: firstOp });
+			setParams(selectedTool.name === "arr_health" ? { service: firstOp } : { operation: firstOp });
 			setResponse("");
 			setRaw("");
 		}
@@ -76,13 +76,52 @@ export default function InspectorPage() {
 		};
 
 		try {
+			const headers = { "Content-Type": "application/json", Accept: "application/json, text/event-stream" };
+			const initRes = await fetch(`${API_BASE}/mcp`, {
+				method: "POST",
+				headers,
+				body: JSON.stringify({
+					jsonrpc: "2.0",
+					id: 0,
+					method: "initialize",
+					params: {
+						protocolVersion: "2025-06-18",
+						capabilities: {},
+						clientInfo: { name: "arr-mcp-inspector", version: "1.0.0" },
+					},
+				}),
+				signal: AbortSignal.timeout(15000),
+			});
+			if (!initRes.ok) throw new Error(`MCP initialization failed: HTTP ${initRes.status}`);
+			const sessionId = initRes.headers.get("mcp-session-id");
+			if (!sessionId) throw new Error("MCP initialization did not return a session ID");
+			await initRes.text();
+
+			const sessionHeaders = { ...headers, "Mcp-Session-Id": sessionId };
+			const readyRes = await fetch(`${API_BASE}/mcp`, {
+				method: "POST",
+				headers: sessionHeaders,
+				body: JSON.stringify({ jsonrpc: "2.0", method: "notifications/initialized" }),
+				signal: AbortSignal.timeout(15000),
+			});
+			if (!readyRes.ok) throw new Error(`MCP session setup failed: HTTP ${readyRes.status}`);
+
 			const res = await fetch(`${API_BASE}/mcp`, {
 				method: "POST",
-				headers: { "Content-Type": "application/json" },
+				headers: sessionHeaders,
 				body: JSON.stringify(jsonrpc),
 				signal: AbortSignal.timeout(15000),
 			});
-			const data = await res.json();
+			const body = await res.text();
+			const message = res.headers.get("content-type")?.includes("text/event-stream")
+				? body
+						.split(/\r?\n/)
+						.find((line) => line.startsWith("data:"))
+						?.slice(5)
+						.trim()
+				: body;
+			const data = JSON.parse(message || "{}");
+			if (!res.ok) throw new Error(data.error?.message || `MCP request failed: HTTP ${res.status}`);
 			setRaw(JSON.stringify(data, null, 2));
 			setResponse(data.result?.content?.[0]?.text || data.error?.message || JSON.stringify(data));
 		} catch (e) {

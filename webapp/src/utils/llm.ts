@@ -1,6 +1,6 @@
 import { API_BASE } from "./api";
 
-const BACKEND = API_BASE || "http://127.0.0.1:10938";
+const BACKEND = API_BASE;
 
 export interface OllamaModel {
 	name: string;

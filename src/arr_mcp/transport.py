@@ -79,6 +79,7 @@ def _run_http(
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
+        expose_headers=["Mcp-Session-Id"],
     )
 
     if api_router:

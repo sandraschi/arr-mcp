@@ -53,6 +53,31 @@ npm install
 npm run dev        # → http://localhost:10939
 ```
 
+## Containers
+
+Release tags publish two images to GitHub Container Registry:
+
+| Image | Purpose | Container port |
+|-------|---------|----------------|
+| `ghcr.io/<owner>/arr-mcp:latest` | MCP HTTP endpoint and REST API | 10938 |
+| `ghcr.io/<owner>/arr-mcp-dashboard:latest` | Optional dashboard, with `/api` and `/mcp` proxied to the backend | 8080 |
+
+Replace `<owner>` with the repository owner and `latest` with a release tag such as `v1.0.0` to pin a version. The Compose defaults use the upstream `sandraschi` namespace; set `ARR_MCP_IMAGE` and `ARR_MCP_DASHBOARD_IMAGE` in `.env` to use images published from a fork. GHCR packages are private when first published; the package owner can make them public, or users can authenticate with `docker login ghcr.io` before pulling.
+
+For Compose, copy `.env.example` to `.env`, add your real API keys, and set each enabled service URL to an address reachable **from the backend container**. With the services in this Compose file, use names such as `http://radarr:7878` and `http://sonarr:8989`; `localhost` inside the backend container refers to that container, not the host. Use a reachable URL for Jellyfin and any sampling provider as well. Disabled services need no API key.
+
+```bash
+docker compose up -d arr-mcp
+# MCP: http://localhost:10938/mcp
+
+docker compose --profile dashboard up -d arr-mcp dashboard
+# Dashboard: http://localhost:10939
+```
+
+The dashboard is optional; its profile does not start with the backend-only command. To use locally built images, run `docker build -t arr-mcp:local .` and `docker build -t arr-mcp-dashboard:local ./webapp`, then set `ARR_MCP_IMAGE=arr-mcp:local` and `ARR_MCP_DASHBOARD_IMAGE=arr-mcp-dashboard:local` in `.env` before starting Compose.
+
+GitHub Actions builds both images on pull requests without publishing. Pushing a `v*` tag publishes that tag and `latest` for AMD64 and ARM64. The container workflow also supports manual runs: choose the ref in GitHub Actions and optionally enter `image_tag`; an empty tag publishes a commit SHA tag. Manual runs do not update `latest`.
+
 ## Supported Services
 
 | Service | Default Port | Config Prefix | Description |
@@ -118,7 +143,7 @@ arr-mcp/
 │   ├── icons/               # App icons
 │   └── build-sidecar.ps1    # PyInstaller → binaries/
 ├── tests/                   # pytest + pytest-httpx (143 tests)
-├── docker-compose.yml       # Full *arr stack (8 services)
+├── docker-compose.yml       # Full *arr stack, MCP backend, optional dashboard
 ├── .github/workflows/ci.yml # GitHub Actions (ruff + pytest + biome + tsc)
 ├── justfile                 # Fleet-standard recipes
 ├── arr-mcp-backend.spec     # PyInstaller spec

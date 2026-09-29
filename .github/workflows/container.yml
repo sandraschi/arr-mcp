@@ -1,0 +1,167 @@
+name: Build and push containers
+
+on:
+  pull_request:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Optional tag for both images; defaults to the commit SHA tag"
+        required: false
+        type: string
+
+permissions: {}
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+      - name: Set up uv with cache
+        if: github.event_name != 'push'
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          enable-cache: true # zizmor: ignore[cache-poisoning] Release tag pushes use the cache-disabled step below.
+      - name: Set up uv for release
+        if: github.event_name == 'push'
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
+        with:
+          # A v* tag push publishes latest; resolve dependencies without a saved cache.
+          enable-cache: false
+      - run: uv sync --group dev
+      - run: uv run ruff check src/arr_mcp tests/
+      - run: uv run pytest -x --tb=short -k "not slow"
+      - name: Set up Node with cache
+        if: github.event_name != 'push'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # TODO: update this to something modern
+          node-version: "20"
+          cache: npm # zizmor: ignore[cache-poisoning] Release tag pushes use the cache-disabled step below.
+          cache-dependency-path: webapp/package-lock.json
+      - name: Set up Node for release
+        if: github.event_name == 'push'
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          # TODO: update this to something modern
+          node-version: "20"
+          # Disable v7's automatic npm cache on release tag builds.
+          package-manager-cache: false
+      - run: npm ci
+        working-directory: webapp
+      - run: npx @biomejs/biome check src/
+        working-directory: webapp
+      - run: npm run build
+        working-directory: webapp
+
+  container:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            image_suffix: ""
+            context: .
+            dockerfile: Dockerfile
+          - name: dashboard
+            image_suffix: -dashboard
+            context: ./webapp
+            dockerfile: ./webapp/Dockerfile
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up QEMU
+        if: github.event_name != 'pull_request'
+        uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - name: Log in to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Resolve image tags
+        id: tag-rules
+        shell: bash
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+        run: |
+          set -euo pipefail
+          {
+            echo 'rules<<EOF'
+            case "$EVENT_NAME" in
+              push)
+                echo 'type=ref,event=tag'
+                echo 'type=raw,value=latest'
+                ;;
+              workflow_dispatch)
+                if [[ -n "$INPUT_IMAGE_TAG" ]]; then
+                  if [[ ! "$INPUT_IMAGE_TAG" =~ ^[a-zA-Z0-9_][a-zA-Z0-9_.-]{0,127}$ ]]; then
+                    echo 'Invalid image_tag: use a Docker-compatible tag of at most 128 characters' >&2
+                    exit 1
+                  fi
+                  echo "type=raw,value=$INPUT_IMAGE_TAG"
+                else
+                  echo 'type=sha'
+                fi
+                ;;
+              *) echo 'type=sha' ;;
+            esac
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+      - name: Extract image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/${{ github.repository }}${{ matrix.image_suffix }}
+          tags: ${{ steps.tag-rules.outputs.rules }}
+          labels: |
+            org.opencontainers.image.description=${{ matrix.name == 'backend' && 'MCP server for the *arr automation stack' || 'Web dashboard for the arr-mcp server' }}
+          annotations: |
+            org.opencontainers.image.description=${{ matrix.name == 'backend' && 'MCP server for the *arr automation stack' || 'Web dashboard for the arr-mcp server' }}
+        env:
+          DOCKER_METADATA_ANNOTATIONS_LEVELS: manifest,index
+      - name: Build and push ${{ matrix.name }}
+        id: build-push
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          platforms: ${{ github.event_name == 'pull_request' && 'linux/amd64' || 'linux/amd64,linux/arm64' }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          annotations: ${{ steps.meta.outputs.annotations }}
+          # The only push event is a release tag. Build it without restored or saved layers.
+          cache-from: ${{ github.event_name != 'push' && format('type=gha,scope={0}', matrix.name) || '' }}
+          cache-to: ${{ github.event_name != 'push' && format('type=gha,mode=max,scope={0}', matrix.name) || '' }}
+      - name: Summarize published image
+        if: github.event_name != 'pull_request'
+        env:
+          IMAGE_TAGS: ${{ steps.meta.outputs.tags }}
+          IMAGE_DIGEST: ${{ steps.build-push.outputs.digest }}
+        run: |
+          {
+            echo '### ${{ matrix.name }} image'
+            echo '```text'
+            echo "$IMAGE_TAGS"
+            echo "Digest: $IMAGE_DIGEST"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"

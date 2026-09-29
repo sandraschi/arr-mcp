@@ -1,6 +1,32 @@
-version: "3.8"
-
 services:
+  # MCP backend; configure API keys and container-reachable service URLs in .env.
+  arr-mcp:
+    image: ${ARR_MCP_IMAGE:-ghcr.io/sandraschi/arr-mcp:latest}
+    container_name: arr-mcp
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      ARR_MCP_TRANSPORT: http
+      ARR_MCP_HOST: 0.0.0.0
+      ARR_MCP_PORT: "10938"
+    ports:
+      - "10938:10938"
+    restart: unless-stopped
+
+  # Optional web dashboard: docker compose --profile dashboard up -d arr-mcp dashboard
+  dashboard:
+    image: ${ARR_MCP_DASHBOARD_IMAGE:-ghcr.io/sandraschi/arr-mcp-dashboard:latest}
+    container_name: arr-mcp-dashboard
+    profiles: [dashboard]
+    depends_on:
+      - arr-mcp
+    environment:
+      ARR_MCP_BACKEND: arr-mcp:10938
+    ports:
+      - "10939:8080"
+    restart: unless-stopped
+
   # ── Radarr (Movies) ──
   radarr:
     image: lscr.io/linuxserver/radarr:latest

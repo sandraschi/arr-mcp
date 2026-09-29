@@ -1,0 +1,28 @@
+server {
+    listen 8080;
+    server_name _;
+    root /usr/share/nginx/html;
+    index index.html;
+    resolver ${NGINX_LOCAL_RESOLVERS} valid=10s;
+    set $backend http://${ARR_MCP_BACKEND};
+
+    location /api/ {
+        proxy_pass $backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+    }
+
+    location /mcp {
+        proxy_pass $backend;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_buffering off;
+        proxy_read_timeout 3600s;
+    }
+
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+}
