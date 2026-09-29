@@ -1,4 +1,4 @@
-"""Overseerr portmanteau tool — media requests & discovery management."""
+"""Overseerr portmanteau tool - media requests & discovery management."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def register_overseerr_tools(mcp, client) -> None:
     if client is None:
-        logger.info("Overseerr not configured — skipping tools")
+        logger.info("Overseerr not configured - skipping tools")
         return
 
     @mcp.tool(

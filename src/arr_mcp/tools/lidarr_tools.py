@@ -1,4 +1,4 @@
-"""Lidarr portmanteau tools — artist & album management."""
+"""Lidarr portmanteau tools - artist & album management."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def register_lidarr_tools(mcp, client) -> None:
     if client is None:
-        logger.info("Lidarr not configured — skipping tools")
+        logger.info("Lidarr not configured - skipping tools")
         return
 
     @mcp.tool(

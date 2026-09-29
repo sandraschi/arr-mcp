@@ -1,4 +1,4 @@
-"""Prowlarr portmanteau tools — indexer backbone + unified search."""
+"""Prowlarr portmanteau tools - indexer backbone + unified search."""
 
 from __future__ import annotations
 
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 def register_prowlarr_tools(mcp, client) -> None:
     if client is None:
-        logger.info("Prowlarr not configured — skipping tools")
+        logger.info("Prowlarr not configured - skipping tools")
         return
 
     @mcp.tool(
@@ -37,7 +37,7 @@ def register_prowlarr_tools(mcp, client) -> None:
     ) -> dict:
         """Manage Prowlarr indexers: list, get, add, update, delete, test.
 
-        Prowlarr is the indexer backbone — these tools manage Usenet and Torrent
+        Prowlarr is the indexer backbone - these tools manage Usenet and Torrent
         indexers that feed the entire *arr stack.
 
         ## Return Format
@@ -125,7 +125,7 @@ def register_prowlarr_tools(mcp, client) -> None:
     ) -> dict:
         """Unified search across ALL Prowlarr indexers.
 
-        This is the backbone search tool — it queries every configured indexer
+        This is the backbone search tool - it queries every configured indexer
         (Usenet + Torrent) in a single call and returns aggregated results.
 
         ## Return Format

@@ -1,4 +1,4 @@
-"""Tool discovery and quickstart — ``arr_help``.
+"""Tool discovery and quickstart - ``arr_help``.
 
 Provides a single ``arr_help`` portmanteau tool that agents and users can call
 to discover available tools, get per-tool documentation, or a quickstart guide.
@@ -17,42 +17,42 @@ logger = logging.getLogger(__name__)
 
 _TOOL_REGISTRY: dict[str, dict[str, Any]] = {
     "arr_radarr": {
-        "description": "Radarr movie management — list, lookup, add, delete, update, import.",
+        "description": "Radarr movie management - list, lookup, add, delete, update, import.",
         "operations": ["list", "lookup", "get", "add", "delete", "update", "import"],
         "service": "radarr",
     },
     "arr_sonarr_series": {
-        "description": "Sonarr series management — list, lookup, add, delete, update.",
+        "description": "Sonarr series management - list, lookup, add, delete, update.",
         "operations": ["list", "lookup", "get", "add", "delete", "update"],
         "service": "sonarr",
     },
     "arr_sonarr_episodes": {
-        "description": "Sonarr episode management — list, get, search, set_monitored.",
+        "description": "Sonarr episode management - list, get, search, set_monitored.",
         "operations": ["list", "get", "search", "set_monitored"],
         "service": "sonarr",
     },
     "arr_lidarr_artists": {
-        "description": "Lidarr artist management — list, lookup, add, delete, update.",
+        "description": "Lidarr artist management - list, lookup, add, delete, update.",
         "operations": ["list", "lookup", "get", "add", "delete", "update"],
         "service": "lidarr",
     },
     "arr_lidarr_albums": {
-        "description": "Lidarr album management — list, get, lookup, set_monitored.",
+        "description": "Lidarr album management - list, get, lookup, set_monitored.",
         "operations": ["list", "get", "lookup", "set_monitored"],
         "service": "lidarr",
     },
     "arr_readarr_authors": {
-        "description": "Readarr author management — list, lookup, add, delete, update.",
+        "description": "Readarr author management - list, lookup, add, delete, update.",
         "operations": ["list", "lookup", "get", "add", "delete", "update"],
         "service": "readarr",
     },
     "arr_readarr_books": {
-        "description": "Readarr book management — list, get, lookup, set_monitored.",
+        "description": "Readarr book management - list, get, lookup, set_monitored.",
         "operations": ["list", "get", "lookup", "set_monitored"],
         "service": "readarr",
     },
     "arr_prowlarr_indexers": {
-        "description": "Prowlarr indexer management — list, get, add, update, delete, test, test_all, schema.",
+        "description": "Prowlarr indexer management - list, get, add, update, delete, test, test_all, schema.",
         "operations": ["list", "get", "add", "update", "delete", "test", "test_all", "schema"],
         "service": "prowlarr",
     },
@@ -62,17 +62,17 @@ _TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "service": "prowlarr",
     },
     "arr_prowlarr_applications": {
-        "description": "Manage Prowlarr-synced *arr applications — list, get, sync, sync_all, test.",
+        "description": "Manage Prowlarr-synced *arr applications - list, get, sync, sync_all, test.",
         "operations": ["list", "get", "sync", "sync_all", "test"],
         "service": "prowlarr",
     },
     "arr_prowlarr_history": {
-        "description": "Query Prowlarr grab/search history — list, since, by_indexer.",
+        "description": "Query Prowlarr grab/search history - list, since, by_indexer.",
         "operations": ["list", "since", "by_indexer"],
         "service": "prowlarr",
     },
     "arr_overseerr_requests": {
-        "description": "Overseerr media request management — list, get, create, approve, decline, delete, count, pending.",
+        "description": "Overseerr media request management - list, get, create, approve, decline, delete, count, pending.",
         "operations": ["list", "get", "create", "approve", "decline", "delete", "count", "pending"],
         "service": "overseerr",
     },
@@ -87,12 +87,12 @@ _TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "service": "overseerr",
     },
     "arr_bazarr_subtitles": {
-        "description": "Bazarr subtitle management — wanted, search, download, history, providers, languages.",
+        "description": "Bazarr subtitle management - wanted, search, download, history, providers, languages.",
         "operations": ["wanted", "search", "download", "history", "providers", "languages"],
         "service": "bazarr",
     },
     "arr_health": {
-        "description": "Stack-wide health check — probes all configured services.",
+        "description": "Stack-wide health check - probes all configured services.",
         "operations": ["all", "radarr", "sonarr", "lidarr", "prowlarr", "readarr", "overseerr", "bazarr"],
         "service": "all",
     },
@@ -107,7 +107,7 @@ _TOOL_REGISTRY: dict[str, dict[str, Any]] = {
         "service": "orchestrator",
     },
     "arr_stats": {
-        "description": "Consolidated stack statistics — summary, disk, queues, history.",
+        "description": "Consolidated stack statistics - summary, disk, queues, history.",
         "operations": ["summary", "disk", "queues", "history"],
         "service": "orchestrator",
     },
@@ -144,9 +144,9 @@ def register_help_tools(mcp) -> None:
     ) -> dict:
         """Discover and learn about arr-mcp tools.
 
-        **discover** — list all registered tools with their operations.
-        **tool_info** — get detailed documentation for a specific tool.
-        **quickstart** — step-by-step guide to start using arr-mcp.
+        **discover** - list all registered tools with their operations.
+        **tool_info** - get detailed documentation for a specific tool.
+        **quickstart** - step-by-step guide to start using arr-mcp.
 
         ## Return Format
         {"success": bool, "message": str, "data": {"tools": [...], "tool_count": int} | {"info": ...} | {"steps": [...]}}

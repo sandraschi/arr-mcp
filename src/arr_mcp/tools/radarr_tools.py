@@ -1,4 +1,4 @@
-"""Radarr portmanteau tool — movie management.
+"""Radarr portmanteau tool - movie management.
 
 All Radarr operations consolidated into a single ``radarr_movies`` tool with an
 ``operation`` discriminator.  Registered at import time via ``@mcp.tool()``
@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 def register_radarr_tools(mcp, client) -> None:
     """Register Radarr tools on the FastMCP instance."""
     if client is None:
-        logger.info("Radarr not configured — skipping tools")
+        logger.info("Radarr not configured - skipping tools")
         return
 
     @mcp.tool(
