@@ -1,8 +1,10 @@
 import {
+	BookMarked,
 	BookOpen,
 	Bot,
 	Film,
 	HelpCircle,
+	Inbox,
 	LayoutDashboard,
 	MessageSquare,
 	Music,
@@ -13,6 +15,7 @@ import {
 	Subtitles,
 	Tv,
 	UserCheck,
+	Wrench,
 } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { APP_VERSION } from "../../version";
@@ -27,6 +30,9 @@ const navItems = [
 	{ to: "/overseerr", icon: UserCheck, label: "Overseerr", color: "overseerr" },
 	{ to: "/bazarr", icon: Subtitles, label: "Bazarr", color: "bazarr" },
 	{ to: "/orchestrate", icon: Puzzle, label: "Orchestrate" },
+	{ to: "/inbox", icon: Inbox, label: "Inbox" },
+	{ to: "/tools", icon: Wrench, label: "Tools" },
+	{ to: "/skills", icon: BookMarked, label: "Skills" },
 ];
 
 const bottomItems = [

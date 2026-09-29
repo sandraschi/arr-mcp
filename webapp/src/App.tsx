@@ -4,6 +4,7 @@ import BazarrPage from "./pages/BazarrPage";
 import ChatPage from "./pages/ChatPage";
 import Dashboard from "./pages/Dashboard";
 import HelpPage from "./pages/HelpPage";
+import InboxPage from "./pages/InboxPage";
 import InspectorPage from "./pages/InspectorPage";
 import LidarrPage from "./pages/LidarrPage";
 import LoggerPage from "./pages/LoggerPage";
@@ -13,7 +14,9 @@ import ProwlarrPage from "./pages/ProwlarrPage";
 import RadarrPage from "./pages/RadarrPage";
 import ReadarrPage from "./pages/ReadarrPage";
 import SettingsPage from "./pages/SettingsPage";
+import SkillsPage from "./pages/SkillsPage";
 import SonarrPage from "./pages/SonarrPage";
+import ToolsPage from "./pages/ToolsPage";
 
 export default function App() {
 	return (
@@ -28,6 +31,9 @@ export default function App() {
 				<Route path="overseerr" element={<OverseerrPage />} />
 				<Route path="bazarr" element={<BazarrPage />} />
 				<Route path="orchestrate" element={<OrchestratePage />} />
+				<Route path="inbox" element={<InboxPage />} />
+				<Route path="tools" element={<ToolsPage />} />
+				<Route path="skills" element={<SkillsPage />} />
 				<Route path="chat" element={<ChatPage />} />
 				<Route path="inspector" element={<InspectorPage />} />
 				<Route path="logger" element={<LoggerPage />} />
