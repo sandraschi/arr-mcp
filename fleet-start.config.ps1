@@ -9,6 +9,7 @@
     Backend = @{
         Kind       = 'module-serve'
         Module     = 'arr_mcp'
+        ServeArgs  = @('--http', '--port', '10938')
         SyncExtras = @('dev')
     }
     Frontend = @{
