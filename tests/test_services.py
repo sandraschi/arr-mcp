@@ -145,6 +145,19 @@ class TestBaseArrClient:
         assert request.method == "DELETE"
         assert request.content == b'{"ids":[1,2,3]}'
 
+    @pytest.mark.asyncio
+    async def test_delete_empty_200_body_returns_empty_dict(self, radarr, httpx_mock):
+        """Regression test for issue #2: Servarr returns 200 with an EMPTY body
+        on successful DELETE. Must return {} instead of raising JSONDecodeError."""
+        httpx_mock.add_response(
+            url=f"{RADARR_URL}/api/v3/movie/42?deleteFiles=false",
+            method="DELETE",
+            status_code=200,
+            content=b"",
+        )
+        result = await radarr.delete_movie(42)
+        assert result == {}
+
 
 # ── RadarrClient specifics ────────────────────────────────────────
 

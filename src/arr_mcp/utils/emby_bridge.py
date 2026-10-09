@@ -13,7 +13,7 @@ from typing import Any
 
 import httpx
 
-from arr_mcp.constants import DEFAULT_TIMEOUT, MediaType
+from arr_mcp.constants import DEFAULT_TIMEOUT, MediaType, is_placeholder_credential
 
 logger = logging.getLogger(__name__)
 
@@ -42,7 +42,9 @@ class EmbyBridge:
 
     @property
     def is_configured(self) -> bool:
-        return bool(self.base_url and self.api_key)
+        # Placeholder secrets from .env.example (e.g. "your-emby-api-key-here")
+        # count as UNCONFIGURED — see issue #1.
+        return bool(self.base_url and self.api_key) and not is_placeholder_credential(self.api_key)
 
     async def _ensure_client(self) -> httpx.AsyncClient:
         if self._client is None or self._client.is_closed:

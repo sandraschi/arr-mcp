@@ -8,6 +8,7 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview",
     "lint": "npx @biomejs/biome check src/",
+    "biome:ci": "npx @biomejs/biome check src/",
     "fix": "npx @biomejs/biome check --write src/",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",

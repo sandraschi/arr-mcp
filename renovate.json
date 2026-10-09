@@ -1,0 +1,1 @@
+{"$schema": "https://docs.renovatebot.com/renovate-schema.json", "extends": ["config:recommended"], "labels": ["dependencies"], "packageRules": [{"description": "Group Python dev tooling", "groupName": "python dev", "matchManagers": ["pip_requirements"], "matchPaths": ["pyproject.toml"]}], "prConcurrentLimit": 3, "schedule": ["before 6am on monday"], "stabilityDays": 3}

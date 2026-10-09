@@ -1,7 +1,7 @@
 import { CheckCircle, Cpu, Key, RefreshCw, Save, Server, Settings, Wifi, XCircle } from "lucide-react";
 import { useState } from "react";
 import { type HealthResult, fetchHealth } from "../utils/api";
-import { type LLMConfig, fetchLMStudioModels, fetchOllamaModels, loadLLMConfig, saveLLMConfig } from "../utils/llm";
+import { type LLMConfig, loadLLMConfig, saveLLMConfig } from "../utils/llm";
 
 export default function SettingsPage() {
 	const [llmConfig, setLLMConfig] = useState<LLMConfig>(loadLLMConfig);
@@ -36,8 +36,8 @@ export default function SettingsPage() {
 	}
 
 	return (
-		<div className="animate-fade-in max-w-2xl">
-			<div className="flex items-center gap-3 mb-6">
+		<div className="animate-fade-in max-w-2xl" data-testid="settings-page">
+			<div className="flex items-center gap-3 mb-6" data-testid="settings-header">
 				<Settings size={24} className="text-zinc-300" />
 				<h2 className="text-2xl font-bold">Settings</h2>
 			</div>
@@ -70,7 +70,7 @@ export default function SettingsPage() {
 				)}
 			</section>
 
-			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4">
+			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4" data-testid="llm-provider-card-local">
 				<div className="flex items-center gap-2 mb-4">
 					<Cpu size={18} className="text-zinc-400" />
 					<h3 className="font-semibold text-sm">Local LLM</h3>

@@ -1,4 +1,20 @@
 
+## [Unreleased] — 2026-10-09
+
+### Fixed (assfix)
+- Issue #2: `_delete` tolerates empty 200 bodies (Servarr DELETE returns `{}` instead of JSONDecodeError false-failure) + regression test.
+- Issue #1: placeholder `.env.example` credentials count as unconfigured (all three media bridges); unreachable media servers yield `<name>_error` pipeline steps instead of aborting orchestration + regression test.
+- CORS: frontend `:10939` origins added; origin regex unconditional (LAN/Tailscale); webapp uses same-origin + Tauri-gated absolute URLs; vite proxy target honors `VITE_API_TARGET`.
+- MCPB manifest: `${PWD}` → `${__dirname}`; regenerated 25-tool list; `scripts/mcpb-pack.ps1` is now the fleet shim.
+- CI: Node 22, push/PR triggers, `ruff format --check` step. Ruff: `S110`/`S112` no longer silenced (clean).
+- `just serve` + `just certify` recipes; `uv.lock` committed; `reports/` gitignored.
+
+### Added (assfix)
+- REST: `GET /api/capabilities|skills|v1/diagnostics`, `GET /api/llm/discover|providers|models|onboarding`, `POST /api/llm/chat|chat` (backend LLM proxy, skill-first), `POST /api/shutdown`; MCP tool `arr_shutdown`.
+- Chat is backend-proxied (no direct browser→provider fetch); ChatPage loads skill status + backend LLM detection (Zustand store).
+- `docs/`: CONFIGURATION, DEVELOPMENT, TOOLS, TROUBLESHOOTING, ONBOARDING; `skills/arr-mcp/SKILL.md`; `llms.txt`, `llms-full.txt`, `glama.json`; session-injection files; `renovate.json`; `.gitattributes`; fleet pre-commit template + vendored scripts.
+- Docker: `Dockerfile` (backend) + `webapp/Dockerfile` + compose `arr-mcp`/`webapp` services (issue #5); Dashboard hero; per-page `data-testid` coverage.
+
 ## [Unreleased] — 2026-06-14
 
 ### Added
@@ -92,4 +108,3 @@
 - Bazarr tools: subtitle search, download, wanted list, providers
 - Cross-arr orchestration with Jellyfin availability bridge
 - Stack-wide health check and consolidated stats
-

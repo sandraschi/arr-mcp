@@ -3,122 +3,129 @@
   "name": "arr-mcp",
   "version": "1.0.0",
   "description": "FastMCP 3.3+ MCP server for the complete *arr automation stack",
-  "author": { "name": "sandraschi" },
+  "author": {
+    "name": "sandraschi"
+  },
   "server": {
     "type": "python",
-    "entry_point": "run_server.py",
+    "entry_point": "src/arr_mcp/server.py",
     "mcp_config": {
       "command": "uv",
-      "args": ["run","--directory","${PWD}","run_server.py"],
+      "args": [
+        "run",
+        "--directory",
+        "${__dirname}",
+        "python",
+        "-m",
+        "arr_mcp"
+      ],
       "env": {
-        "PYTHONPATH": "${PWD}/src",
-        "PYTHONUNBUFFERED": "1"
+        "PYTHONPATH": "${__dirname}/src",
+        "PYTHONUNBUFFERED": "1",
+        "MCP_TRANSPORT": "stdio"
       }
     }
   },
   "tools": [
-    { "name": "api_health", "description": "api_health" },
-    { "name": "api_logs", "description": "api_logs" },
-    { "name": "api_logs_stream", "description": "SSE endpoint for real-time log streaming." },
-    { "name": "radarr_summary", "description": "radarr_summary" },
-    { "name": "radarr_movies", "description": "radarr_movies" },
-    { "name": "sonarr_summary", "description": "sonarr_summary" },
-    { "name": "sonarr_series", "description": "sonarr_series" },
-    { "name": "lidarr_summary", "description": "lidarr_summary" },
-    { "name": "prowlarr_summary", "description": "prowlarr_summary" },
-    { "name": "readarr_summary", "description": "readarr_summary" },
-    { "name": "overseerr_summary", "description": "overseerr_summary" },
-    { "name": "bazarr_summary", "description": "bazarr_summary" },
-    { "name": "orchestrator_summary", "description": "orchestrator_summary" },
-    { "name": "health_alias", "description": "health_alias" },
-    { "name": "arr_agentic", "description": "arr_agentic" },
-    { "name": "register_agentic_tools_workflow", "description": "register_agentic_tools(workflow)" },
-    { "name": "register_agentic_tools_natural_query", "description": "register_agentic_tools(natural_query)" },
-    { "name": "bazarr_subtitles", "description": "bazarr_subtitles" },
-    { "name": "register_bazarr_tools_wanted", "description": "register_bazarr_tools(wanted)" },
-    { "name": "register_bazarr_tools_search", "description": "register_bazarr_tools(search)" },
-    { "name": "register_bazarr_tools_download", "description": "register_bazarr_tools(download)" },
-    { "name": "register_bazarr_tools_history", "description": "register_bazarr_tools(history)" },
-    { "name": "register_bazarr_tools_providers", "description": "register_bazarr_tools(providers)" },
-    { "name": "register_bazarr_tools_languages", "description": "register_bazarr_tools(languages)" },
-    { "name": "arr_orchestrate", "description": "arr_orchestrate" },
-    { "name": "arr_calendar", "description": "arr_calendar" },
-    { "name": "arr_stats", "description": "arr_stats" },
-    { "name": "register_cross_arr_tools_request", "description": "register_cross_arr_tools(request)" },
-    { "name": "register_cross_arr_tools_status", "description": "register_cross_arr_tools(status)" },
-    { "name": "register_cross_arr_tools_check_jellyfin", "description": "register_cross_arr_tools(check_jellyfin)" },
-    { "name": "register_cross_arr_tools_check_plex", "description": "register_cross_arr_tools(check_plex)" },
-    { "name": "register_cross_arr_tools_check_emby", "description": "register_cross_arr_tools(check_emby)" },
-    { "name": "register_cross_arr_tools_queue", "description": "register_cross_arr_tools(queue)" },
-    { "name": "arr_health", "description": "arr_health" },
-    { "name": "register_health_tools_all", "description": "register_health_tools(all)" },
-    { "name": "register_health_tools_radarr", "description": "register_health_tools(radarr)" },
-    { "name": "register_health_tools_sonarr", "description": "register_health_tools(sonarr)" },
-    { "name": "register_health_tools_lidarr", "description": "register_health_tools(lidarr)" },
-    { "name": "register_health_tools_prowlarr", "description": "register_health_tools(prowlarr)" },
-    { "name": "register_health_tools_readarr", "description": "register_health_tools(readarr)" },
-    { "name": "register_health_tools_overseerr", "description": "register_health_tools(overseerr)" },
-    { "name": "register_health_tools_bazarr", "description": "register_health_tools(bazarr)" },
-    { "name": "arr_help", "description": "arr_help" },
-    { "name": "register_help_tools_discover", "description": "register_help_tools(discover)" },
-    { "name": "register_help_tools_tool_info", "description": "register_help_tools(tool_info)" },
-    { "name": "register_help_tools_quickstart", "description": "register_help_tools(quickstart)" },
-    { "name": "lidarr_artists", "description": "lidarr_artists" },
-    { "name": "lidarr_albums", "description": "lidarr_albums" },
-    { "name": "register_lidarr_tools_list", "description": "register_lidarr_tools(list)" },
-    { "name": "register_lidarr_tools_lookup", "description": "register_lidarr_tools(lookup)" },
-    { "name": "register_lidarr_tools_get", "description": "register_lidarr_tools(get)" },
-    { "name": "register_lidarr_tools_add", "description": "register_lidarr_tools(add)" },
-    { "name": "register_lidarr_tools_delete", "description": "register_lidarr_tools(delete)" },
-    { "name": "register_lidarr_tools_update", "description": "register_lidarr_tools(update)" },
-    { "name": "overseerr_requests", "description": "overseerr_requests" },
-    { "name": "overseerr_search", "description": "overseerr_search" },
-    { "name": "overseerr_users", "description": "overseerr_users" },
-    { "name": "register_overseerr_tools_list", "description": "register_overseerr_tools(list)" },
-    { "name": "register_overseerr_tools_get", "description": "register_overseerr_tools(get)" },
-    { "name": "register_overseerr_tools_create", "description": "register_overseerr_tools(create)" },
-    { "name": "register_overseerr_tools_approve", "description": "register_overseerr_tools(approve)" },
-    { "name": "register_overseerr_tools_decline", "description": "register_overseerr_tools(decline)" },
-    { "name": "register_overseerr_tools_delete", "description": "register_overseerr_tools(delete)" },
-    { "name": "register_overseerr_tools_count", "description": "register_overseerr_tools(count)" },
-    { "name": "register_overseerr_tools_pending", "description": "register_overseerr_tools(pending)" },
-    { "name": "arr_health_card", "description": "arr_health_card" },
-    { "name": "arr_calendar_card", "description": "arr_calendar_card" },
-    { "name": "arr_stats_card", "description": "arr_stats_card" },
-    { "name": "prowlarr_indexers", "description": "prowlarr_indexers" },
-    { "name": "prowlarr_search", "description": "prowlarr_search" },
-    { "name": "prowlarr_applications", "description": "prowlarr_applications" },
-    { "name": "prowlarr_history", "description": "prowlarr_history" },
-    { "name": "register_prowlarr_tools_list", "description": "register_prowlarr_tools(list)" },
-    { "name": "register_prowlarr_tools_get", "description": "register_prowlarr_tools(get)" },
-    { "name": "register_prowlarr_tools_add", "description": "register_prowlarr_tools(add)" },
-    { "name": "register_prowlarr_tools_update", "description": "register_prowlarr_tools(update)" },
-    { "name": "register_prowlarr_tools_delete", "description": "register_prowlarr_tools(delete)" },
-    { "name": "register_prowlarr_tools_test", "description": "register_prowlarr_tools(test)" },
-    { "name": "register_prowlarr_tools_test_all", "description": "register_prowlarr_tools(test_all)" },
-    { "name": "register_prowlarr_tools_schema", "description": "register_prowlarr_tools(schema)" },
-    { "name": "register_radarr_tools", "description": "register_radarr_tools" },
-    { "name": "register_radarr_tools_list", "description": "register_radarr_tools(list)" },
-    { "name": "register_radarr_tools_lookup", "description": "register_radarr_tools(lookup)" },
-    { "name": "register_radarr_tools_get", "description": "register_radarr_tools(get)" },
-    { "name": "register_radarr_tools_add", "description": "register_radarr_tools(add)" },
-    { "name": "register_radarr_tools_delete", "description": "register_radarr_tools(delete)" },
-    { "name": "register_radarr_tools_update", "description": "register_radarr_tools(update)" },
-    { "name": "register_radarr_tools_import", "description": "register_radarr_tools(import)" },
-    { "name": "readarr_authors", "description": "readarr_authors" },
-    { "name": "readarr_books", "description": "readarr_books" },
-    { "name": "register_readarr_tools_list", "description": "register_readarr_tools(list)" },
-    { "name": "register_readarr_tools_lookup", "description": "register_readarr_tools(lookup)" },
-    { "name": "register_readarr_tools_get", "description": "register_readarr_tools(get)" },
-    { "name": "register_readarr_tools_add", "description": "register_readarr_tools(add)" },
-    { "name": "register_readarr_tools_delete", "description": "register_readarr_tools(delete)" },
-    { "name": "register_readarr_tools_update", "description": "register_readarr_tools(update)" },
-    { "name": "sonarr_episodes", "description": "sonarr_episodes" },
-    { "name": "register_sonarr_tools_list", "description": "register_sonarr_tools(list)" },
-    { "name": "register_sonarr_tools_lookup", "description": "register_sonarr_tools(lookup)" },
-    { "name": "register_sonarr_tools_get", "description": "register_sonarr_tools(get)" },
-    { "name": "register_sonarr_tools_add", "description": "register_sonarr_tools(add)" },
-    { "name": "register_sonarr_tools_delete", "description": "register_sonarr_tools(delete)" },
-    { "name": "register_sonarr_tools_update", "description": "register_sonarr_tools(update)" }
+    {
+      "name": "radarr_movies",
+      "description": "Movie lifecycle (list, lookup, add, delete, update, import)"
+    },
+    {
+      "name": "sonarr_series",
+      "description": "Series lifecycle (list, lookup, add, delete, update)"
+    },
+    {
+      "name": "sonarr_episodes",
+      "description": "Episode management (list, get, search, set_monitored)"
+    },
+    {
+      "name": "lidarr_artists",
+      "description": "Artist lifecycle (list, lookup, add, delete, update)"
+    },
+    {
+      "name": "lidarr_albums",
+      "description": "Album management (list, get, lookup, set_monitored)"
+    },
+    {
+      "name": "readarr_authors",
+      "description": "Author lifecycle (list, lookup, add, delete, update)"
+    },
+    {
+      "name": "readarr_books",
+      "description": "Book management (list, get, lookup, set_monitored)"
+    },
+    {
+      "name": "prowlarr_indexers",
+      "description": "Indexer lifecycle (list, get, add, update, delete, test)"
+    },
+    {
+      "name": "prowlarr_search",
+      "description": "Unified search across all indexers"
+    },
+    {
+      "name": "prowlarr_applications",
+      "description": "Connected *arr app management"
+    },
+    {
+      "name": "prowlarr_history",
+      "description": "Indexer history and statistics"
+    },
+    {
+      "name": "bazarr_subtitles",
+      "description": "Subtitle search, download, history"
+    },
+    {
+      "name": "overseerr_requests",
+      "description": "Media request management (list, approve, decline)"
+    },
+    {
+      "name": "overseerr_search",
+      "description": "Search Overseerr"
+    },
+    {
+      "name": "overseerr_users",
+      "description": "Overseerr user management"
+    },
+    {
+      "name": "arr_orchestrate",
+      "description": "Cross-arr orchestration with media-server availability check"
+    },
+    {
+      "name": "arr_calendar",
+      "description": "Unified calendar across all arrs"
+    },
+    {
+      "name": "arr_stats",
+      "description": "Consolidated stack statistics"
+    },
+    {
+      "name": "arr_health",
+      "description": "Stack-wide health probe"
+    },
+    {
+      "name": "arr_shutdown",
+      "description": "Graceful server shutdown"
+    },
+    {
+      "name": "arr_help",
+      "description": "Tool discovery and quickstart"
+    },
+    {
+      "name": "arr_agentic",
+      "description": "LLM-powered cross-arr workflows"
+    },
+    {
+      "name": "arr_health_card",
+      "description": "Rich health card (Prefab UI)"
+    },
+    {
+      "name": "arr_calendar_card",
+      "description": "Rich calendar card (Prefab UI)"
+    },
+    {
+      "name": "arr_stats_card",
+      "description": "Rich stats card (Prefab UI)"
+    }
   ]
 }

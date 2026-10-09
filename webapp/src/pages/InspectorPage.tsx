@@ -100,7 +100,7 @@ export default function InspectorPage() {
 	}
 
 	return (
-		<div className="animate-fade-in flex flex-col h-[calc(100vh-6rem)]">
+		<div className="animate-fade-in flex flex-col h-[calc(100vh-6rem)]" data-testid="inspector-page">
 			<div className="flex items-center gap-3 mb-4">
 				<Bot size={24} className="text-zinc-300" />
 				<h2 className="text-2xl font-bold">Inspector</h2>
@@ -108,7 +108,10 @@ export default function InspectorPage() {
 			</div>
 
 			{!selectedTool && (
-				<div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 overflow-y-auto flex-1">
+				<div
+					className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 overflow-y-auto flex-1"
+					data-testid="inspector-tool-grid"
+				>
 					{tools.map((t) => (
 						<button
 							type="button"
@@ -133,7 +136,7 @@ export default function InspectorPage() {
 						<ChevronRight size={12} className="rotate-180" /> Back to tools
 					</button>
 
-					<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4">
+					<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-4" data-testid="inspector-tool-detail">
 						<h3 className="font-semibold text-sm mb-3 flex items-center gap-2">
 							<Cpu size={14} /> <code className="text-zinc-200">{selectedTool.name}</code>
 						</h3>

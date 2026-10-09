@@ -90,8 +90,8 @@ export default function LoggerPage() {
 	}, [lines, filter]);
 
 	return (
-		<div className="space-y-4 max-w-6xl mx-auto">
-			<div className="flex items-center justify-between">
+		<div className="space-y-4 max-w-6xl mx-auto" data-testid="logger-page">
+			<div className="flex items-center justify-between" data-testid="logger-controls">
 				<h2 className="text-2xl font-bold text-white flex items-center gap-3">
 					<Activity className="text-emerald-500" /> Server Logs
 				</h2>
@@ -151,7 +151,10 @@ export default function LoggerPage() {
 					</span>
 					<span>{display.length} lines</span>
 				</div>
-				<div className="h-[60vh] overflow-y-auto p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap break-all">
+				<div
+					className="h-[60vh] overflow-y-auto p-4 font-mono text-xs text-zinc-300 whitespace-pre-wrap break-all"
+					data-testid="logger-list"
+				>
 					{display.length === 0 ? (
 						<span className="text-zinc-500 italic">No log lines.</span>
 					) : (

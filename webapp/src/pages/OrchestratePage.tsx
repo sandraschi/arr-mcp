@@ -59,14 +59,14 @@ export default function OrchestratePage() {
 	}, []);
 
 	return (
-		<div className="animate-fade-in">
+		<div className="animate-fade-in" data-testid="orchestrate-page">
 			<div className="flex items-center gap-3 mb-6">
 				<Puzzle size={24} className="text-zinc-300" />
 				<h2 className="text-2xl font-bold">Orchestrate</h2>
 				<span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded">Cross-Arr Pipeline</span>
 			</div>
 
-			<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6">
+			<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 mb-6" data-testid="orchestrate-pipeline">
 				<h3 className="font-semibold mb-4">Media Request Pipeline</h3>
 				<div className="flex flex-wrap items-center gap-2 text-sm text-zinc-400 mb-6">
 					<PipelineStep icon={Search} label="Jellyfin Check" />
@@ -119,7 +119,7 @@ export default function OrchestratePage() {
 							))}
 					</div>
 
-					<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4">
+					<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4" data-testid="orchestrate-overview">
 						<h3 className="flex items-center gap-2 font-semibold text-sm mb-3">
 							<BarChart3 size={16} /> Stack Overview
 						</h3>

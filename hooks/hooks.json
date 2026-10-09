@@ -1,0 +1,1 @@
+{"hooks": {"SessionStart": [{"hooks": [{"text": "## arr-mcp session: probe GET /api/health, then arr_health(). Tools: src/arr_mcp/tools/*. Start backend: python -m arr_mcp --http --port 10938. End: ruff + pytest, sync docs/TOOLS.md.", "type": "text"}]}]}}

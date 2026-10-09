@@ -64,7 +64,7 @@ export default function Dashboard() {
 
 	if (loading) {
 		return (
-			<div className="animate-fade-in">
+			<div className="animate-fade-in" data-testid="dashboard-loading">
 				<h2 className="text-2xl font-bold mb-6">Dashboard</h2>
 				<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
 					<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 animate-pulse">
@@ -104,7 +104,17 @@ export default function Dashboard() {
 	const totalCount = Object.keys(health || {}).length;
 
 	return (
-		<div className="animate-fade-in">
+		<div className="animate-fade-in" data-testid="dashboard">
+			<div className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-6" data-testid="dashboard-hero">
+				<h1 className="text-xl font-bold">*arr stack control panel</h1>
+				<p className="text-sm text-zinc-400 mt-1">
+					One dashboard for Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr and Bazarr. Cards below show live
+					reachability (polled every 15s). Missing a service? Copy
+					<code className="font-mono text-zinc-300">.env.example</code> to{" "}
+					<code className="font-mono text-zinc-300">.env</code>, add URL + API key, restart the backend. Use Orchestrate
+					to request a title — Jellyfin/Plex/Emby are checked first.
+				</p>
+			</div>
 			<div className="flex items-center justify-between mb-6">
 				<h2 className="text-2xl font-bold">Dashboard</h2>
 				<div className="flex items-center gap-3">

@@ -100,7 +100,7 @@ export function ServicePage({
 
 	if (loading) {
 		return (
-			<div className="animate-fade-in">
+			<div className="animate-fade-in" data-testid={`service-page-${title.toLowerCase()}-loading`}>
 				<PageHeader title={title} subtitle={subtitle} color={color} />
 				<div className="grid grid-cols-1 md:grid-cols-3 gap-4">
 					<Skeleton />
@@ -112,18 +112,24 @@ export function ServicePage({
 	}
 
 	return (
-		<div className="animate-fade-in">
+		<div className="animate-fade-in" data-testid={`service-page-${title.toLowerCase()}`}>
 			<PageHeader title={title} subtitle={subtitle} color={color} />
 
 			{error && (
-				<div className="bg-red-900/20 border border-red-800/40 rounded-xl p-4 mb-4 flex items-center gap-3 text-sm text-red-400">
+				<div
+					className="bg-red-900/20 border border-red-800/40 rounded-xl p-4 mb-4 flex items-center gap-3 text-sm text-red-400"
+					data-testid={`service-page-${title.toLowerCase()}-error`}
+				>
 					<AlertTriangle size={16} /> {error}
 				</div>
 			)}
 
 			{data && (
 				<>
-					<div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+					<div
+						className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"
+						data-testid={`service-page-${title.toLowerCase()}-stats`}
+					>
 						{data.movies !== undefined && <StatCard label="Movies" value={data.movies} color={color} />}
 						{data.series !== undefined && <StatCard label="Series" value={data.series} color={color} />}
 						{data.artists !== undefined && <StatCard label="Artists" value={data.artists} color={color} />}

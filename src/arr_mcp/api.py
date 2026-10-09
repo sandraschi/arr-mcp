@@ -13,8 +13,86 @@ import logging
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
+from pydantic import BaseModel, Field
 
 logger = logging.getLogger(__name__)
+
+OLLAMA_DEFAULT_URL = "http://127.0.0.1:11434"
+LMSTUDIO_DEFAULT_URL = "http://127.0.0.1:1234"
+
+
+class LlmChatRequest(BaseModel):
+    provider: str = Field(default="ollama", description="ollama | lmstudio")
+    base_url: str | None = Field(default=None, description="Override provider base URL (for Test buttons).")
+    model: str = Field(description="Model name as listed by the provider.")
+    messages: list[dict[str, str]] = Field(description="OpenAI-style [{role, content}] messages.")
+
+
+class ChatRequest(BaseModel):
+    message: str = Field(description="User message.")
+    history: list[dict[str, str]] = Field(default_factory=list, description="Prior [{role, content}] turns.")
+    personality: str | None = Field(default=None, description="Personality id (arr-expert, media-curator, ...).")
+    provider: str = Field(default="ollama")
+    base_url: str | None = None
+    model: str | None = None
+
+
+def _skill_text() -> str:
+    """Load the domain skill for chat preprompts; fall back to a registry summary."""
+    from pathlib import Path
+
+    candidates = [
+        Path(__file__).resolve().parents[2] / "skills" / "arr-mcp" / "SKILL.md",
+        Path.cwd() / "skills" / "arr-mcp" / "SKILL.md",
+    ]
+    for path in candidates:
+        if path.is_file():
+            return path.read_text(encoding="utf-8")
+    return (
+        "# arr-mcp skill\n\nPer-service tools: radarr_movies, sonarr_series, sonarr_episodes, "
+        "lidarr_artists, lidarr_albums, readarr_authors, readarr_books, prowlarr_indexers, "
+        "prowlarr_search, prowlarr_applications, prowlarr_history, bazarr_subtitles, "
+        "overseerr_requests, overseerr_search, overseerr_users. Cross-arr: arr_health, "
+        "arr_orchestrate, arr_calendar, arr_stats, arr_help."
+    )
+
+
+async def _probe_llm(base_url: str, timeout: float = 2.0) -> bool:
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            resp = await client.get(f"{base_url.rstrip('/')}/api/tags")
+            if resp.status_code == 200:
+                return True
+            resp = await client.get(f"{base_url.rstrip('/')}/v1/models")
+            return resp.status_code == 200
+    except Exception:
+        return False
+
+
+async def _forward_llm_chat(provider: str, base_url: str, model: str, messages: list[dict[str, str]]) -> str:
+    """Forward a chat completion to Ollama/LM Studio server-side (keys never leave the server)."""
+    import httpx
+
+    base = base_url.rstrip("/")
+    async with httpx.AsyncClient(timeout=120) as client:
+        if provider == "lmstudio":
+            resp = await client.post(
+                f"{base}/v1/chat/completions",
+                json={"model": model, "messages": messages},
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            return data["choices"][0]["message"]["content"] or ""
+        # default: ollama
+        resp = await client.post(
+            f"{base}/api/chat",
+            json={"model": model, "messages": messages, "stream": False},
+        )
+        resp.raise_for_status()
+        data = resp.json()
+        return (data.get("message") or {}).get("content", "")
 
 
 def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] | None = None) -> APIRouter:
@@ -22,8 +100,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
 
     # ── diagnostics (CUA-NSIS smoke test) ───────────────────────
 
-    @router.get("/diagnostics")
-    async def api_diagnostics():
+    async def _diagnostics_payload() -> dict:
         try:
             import psutil
 
@@ -32,15 +109,149 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
             disk = psutil.disk_usage("/").percent
         except ImportError:
             cpu = mem = disk = None
+        return {
+            "success": True,
+            "backend": {"port": 10938, "status": "running"},
+            "system": {"cpu_percent": cpu, "memory_percent": mem, "disk_percent": disk},
+            "tools": {"total": sum(1 for c in clients.values() if c is not None)},
+            "cua_status": {"tesseract_available": False, "window_found": False},
+        }
+
+    @router.get("/diagnostics")
+    async def api_diagnostics():
+        return JSONResponse(content=await _diagnostics_payload())
+
+    @router.get("/v1/diagnostics")
+    async def api_diagnostics_v1():
+        """Versioned alias required for CUA-NSIS smoke testing."""
+        return JSONResponse(content=await _diagnostics_payload())
+
+    # ── capabilities (webapp Tools/Skills pages) ─────────────────
+
+    @router.get("/capabilities")
+    async def api_capabilities():
+        services = sorted(clients.keys())
         return JSONResponse(
             content={
                 "success": True,
-                "backend": {"port": 10938, "status": "running"},
-                "system": {"cpu_percent": cpu, "memory_percent": mem, "disk_percent": disk},
-                "tools": {"total": sum(1 for c in clients.values() if c is not None)},
-                "cua_status": {"tesseract_available": False, "window_found": False},
+                "data": {
+                    "server": "arr-mcp",
+                    "services": services,
+                    "configured": sorted(k for k, v in clients.items() if v is not None),
+                    "transports": ["stdio", "http", "sse"],
+                    "features": ["resources", "prompts", "prefab-cards", "sse-logs", "llm-proxy", "skills"],
+                },
             }
         )
+
+    # ── skills (Chat skill-first preprompt) ────────────────────────
+
+    @router.get("/skills")
+    async def api_skills():
+        return JSONResponse(content={"success": True, "data": {"skill": _skill_text()}})
+
+    # ── LLM provider discovery + backend chat proxy ───────────────
+    # Keys never leave the server: the webapp Chat page must use these
+    # endpoints, never fetch Ollama/LM Studio directly from the browser.
+
+    @router.get("/llm/discover")
+    async def api_llm_discover():
+        ollama = await _probe_llm(OLLAMA_DEFAULT_URL)
+        lmstudio = await _probe_llm(LMSTUDIO_DEFAULT_URL)
+        return JSONResponse(content={"success": True, "data": {"ollama": ollama, "lmstudio": lmstudio}})
+
+    @router.get("/llm/providers")
+    async def api_llm_providers():
+        ollama = await _probe_llm(OLLAMA_DEFAULT_URL)
+        lmstudio = await _probe_llm(LMSTUDIO_DEFAULT_URL)
+        return JSONResponse(
+            content={
+                "success": True,
+                "data": {
+                    "providers": [
+                        {
+                            "id": "ollama",
+                            "label": "Ollama (local, free)",
+                            "detected": ollama,
+                            "default_url": OLLAMA_DEFAULT_URL,
+                        },
+                        {
+                            "id": "lmstudio",
+                            "label": "LM Studio (local, free)",
+                            "detected": lmstudio,
+                            "default_url": LMSTUDIO_DEFAULT_URL,
+                        },
+                    ]
+                },
+            }
+        )
+
+    @router.get("/llm/models")
+    async def api_llm_models(provider: str = "ollama", base_url: str | None = None):
+        import httpx
+
+        base = (base_url or (OLLAMA_DEFAULT_URL if provider == "ollama" else LMSTUDIO_DEFAULT_URL)).rstrip("/")
+        try:
+            async with httpx.AsyncClient(timeout=10) as client:
+                if provider == "lmstudio":
+                    resp = await client.get(f"{base}/v1/models")
+                    resp.raise_for_status()
+                    models = [m.get("id", "") for m in resp.json().get("data", [])]
+                else:
+                    resp = await client.get(f"{base}/api/tags")
+                    resp.raise_for_status()
+                    models = [m.get("name", "") for m in resp.json().get("models", [])]
+            return JSONResponse(content={"success": True, "data": {"provider": provider, "models": models}})
+        except Exception as e:
+            raise HTTPException(502, f"{provider} at {base} unreachable: {e}") from e
+
+    @router.get("/llm/onboarding")
+    async def api_llm_onboarding():
+        ollama = await _probe_llm(OLLAMA_DEFAULT_URL)
+        lmstudio = await _probe_llm(LMSTUDIO_DEFAULT_URL)
+        if ollama:
+            path = "Ollama detected - pick a model in Chat settings and start asking."
+        elif lmstudio:
+            path = "LM Studio detected - pick a model in Chat settings and start asking."
+        else:
+            path = "No local LLM detected - install Ollama (http://127.0.0.1:11434) or LM Studio (http://127.0.0.1:1234), then reload."
+        return JSONResponse(
+            content={"success": True, "data": {"ollama": ollama, "lmstudio": lmstudio, "recommended_path": path}}
+        )
+
+    @router.post("/llm/chat")
+    async def api_llm_chat(body: LlmChatRequest):
+        base = body.base_url or (OLLAMA_DEFAULT_URL if body.provider == "ollama" else LMSTUDIO_DEFAULT_URL)
+        try:
+            reply = await _forward_llm_chat(body.provider, base, body.model, body.messages)
+            return JSONResponse(content={"success": True, "data": {"reply": reply}})
+        except Exception as e:
+            raise HTTPException(502, f"LLM chat via {body.provider} failed: {e}") from e
+
+    @router.post("/chat")
+    async def api_chat(body: ChatRequest):
+        """Skill-first chat: domain skill + personality preprompt, then backend LLM proxy."""
+        personalities = {
+            "arr-expert": "You are an expert in Radarr, Sonarr, Lidarr, Readarr, Prowlarr, Overseerr, Bazarr and the full *arr stack.",
+            "media-curator": "You help curate media libraries with quality and organization in mind.",
+            "quick-summarizer": "Keep responses brief and to the point.",
+            "custom": "",
+        }
+        system_parts = [_skill_text()]
+        if body.personality and personalities.get(body.personality):
+            system_parts.append(personalities[body.personality])
+        system_parts.append("Answer with the *arr stack in mind; suggest concrete tool calls where relevant.")
+        messages = [{"role": "system", "content": "\n\n".join(system_parts)}]
+        messages.extend(body.history[-20:])
+        messages.append({"role": "user", "content": body.message})
+        base = body.base_url or (OLLAMA_DEFAULT_URL if body.provider == "ollama" else LMSTUDIO_DEFAULT_URL)
+        if not body.model:
+            raise HTTPException(400, "model is required (pick one in Chat settings)")
+        try:
+            reply = await _forward_llm_chat(body.provider, base, body.model, messages)
+            return JSONResponse(content={"success": True, "data": {"reply": reply}})
+        except Exception as e:
+            raise HTTPException(502, f"LLM chat via {body.provider} failed: {e}") from e
 
     # ── health check (all services) ──────────────────────────────
 

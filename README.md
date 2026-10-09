@@ -12,10 +12,27 @@
 
 FastMCP 3.3 MCP server for the complete *arr automation stack — Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr, and Bazarr — under a single MCP interface.
 
+New here? Start at [`docs/ONBOARDING.md`](docs/ONBOARDING.md) (10-minute setup, no account needed).
+
+## Install (Claude Desktop)
+
+Download `arr-mcp.mcpb` + `install.ps1` from the
+[latest release](https://github.com/sandraschi/arr-mcp/releases/latest/download/install.ps1),
+then run `install.ps1` — it installs the bundle into Claude Desktop.
+Other MCP clients (Cursor, Windsurf, opencode):
+
+```json
+{
+  "mcpServers": {
+    "arr-mcp": { "command": "uvx", "args": ["arr-mcp"] }
+  }
+}
+```
+
 ## Features
 
 - **7 services, 1 MCP server** — Radarr (Movies), Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books), Overseerr (Requests), Bazarr (Subtitles)
-- **25 MCP tools** — 22 portmanteau tools + 3 Prefab card tools, 109+ operations
+- **25 MCP tools** — 22 portmanteau tools + 3 Prefab card tools, 100+ operations
 - **Cross-arr orchestration** — request a title, auto-routes to correct arr with Jellyfin availability check
 - **Prefab-UI cards** — `arr_health_card`, `arr_calendar_card`, `arr_stats_card` — rich interactive cards in Claude Desktop, Cursor
 - **Prowlarr indexer backbone** — unified search across all indexers
@@ -24,7 +41,7 @@ FastMCP 3.3 MCP server for the complete *arr automation stack — Radarr, Sonarr
 - **FastMCP 3.3 resources** — `arr://config`, `arr://quickstart`, `arr://help`, `arr://capabilities` for agent self-discovery
 - **LLM sampling** — `arr_agentic` tool with Context injection for LLM-powered cross-arr workflows
 - **React dashboard** — 15-page webapp with health monitoring, LLM chat, MCP Inspector, live SSE log streaming
-- **Local LLM chat** — built-in chat page with Ollama and LM Studio model selection
+- **Local LLM chat** — built-in chat page with Ollama and LM Studio model selection (backend-proxied: keys never leave the server)
 - **PWA** — installable as desktop/mobile app with offline service worker
 - **MCP Inspector** — interactive tool runner: select a tool, set params, execute via `/mcp`, see raw JSON-RPC response
 - **Real-time logs** — SSE stream endpoint `/api/logs/stream` for live log viewing
@@ -158,6 +175,18 @@ Playwright auto-starts the backend (`:10938`) and Vite dev server (`:10939`). 15
 
 - Backend: **10938** (FastMCP HTTP `/mcp` + REST `/api/*` + SSE `/api/logs/stream`)
 - Frontend: **10939** (Vite React dashboard)
+
+## Docker (remote hosting)
+
+```bash
+docker compose up -d arr-mcp              # backend on :10938 (HTTP transport)
+docker compose --profile webapp up -d     # dashboard on :10939
+```
+
+The `arr-mcp` service builds `Dockerfile` (uv, locked deps) with
+`ARR_MCP_TRANSPORT=http`; config comes from the repo-root `.env`.
+Point MCP clients at `http://HOST:10938/mcp`. See `docs/TROUBLESHOOTING.md`
+for container networking notes (use compose service names, not `localhost`).
 
 ## License
 

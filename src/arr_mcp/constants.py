@@ -80,6 +80,20 @@ def service_key(name: str | ArrServiceName | None) -> str:
     return name
 
 
+def is_placeholder_credential(value: str) -> bool:
+    """Detect unconfigured placeholder secrets shipped in `.env.example`.
+
+    Users copy `.env.example` to `.env` (per README quick start), which leaves
+    values like ``your-emby-api-key-here`` in place. Such placeholders must be
+    treated as *unconfigured*, not as real credentials — otherwise bridges report
+    themselves configured and fail at request time (issue #1).
+    """
+    if not value or not value.strip():
+        return True
+    lowered = value.strip().lower()
+    return lowered.startswith("your-") or "here" in lowered and "your" in lowered
+
+
 # Maps media types to their corresponding arr service
 MEDIA_TYPE_TO_ARR: dict[MediaType, ArrServiceName] = {
     MediaType.MOVIE: ArrServiceName.RADARR,

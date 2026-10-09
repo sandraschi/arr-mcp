@@ -226,14 +226,14 @@ export default function HelpPage() {
 	const [showToolRef, setShowToolRef] = useState(false);
 
 	return (
-		<div className="animate-fade-in max-w-3xl">
+		<div className="animate-fade-in max-w-3xl" data-testid="help-page">
 			<div className="flex items-center gap-3 mb-6">
 				<HelpCircle size={24} className="text-zinc-300" />
 				<h2 className="text-2xl font-bold">Help</h2>
 			</div>
 
 			{/* What is arr-mcp */}
-			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4">
+			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4" data-testid="help-about">
 				<div className="flex items-center gap-2 mb-3">
 					<Book size={18} className="text-zinc-400" />
 					<h3 className="font-semibold text-sm">What is arr-mcp?</h3>
@@ -247,7 +247,7 @@ export default function HelpPage() {
 			</section>
 
 			{/* Quick Start */}
-			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4">
+			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4" data-testid="help-quickstart">
 				<div className="flex items-center gap-2 mb-3">
 					<Terminal size={18} className="text-zinc-400" />
 					<h3 className="font-semibold text-sm">Quick Start</h3>

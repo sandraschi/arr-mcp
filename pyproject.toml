@@ -74,7 +74,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP", "N", "S", "A", "C4", "T20", "RET", "SIM", "ARG", "TRY", "PTH"]
-ignore = ["E501", "B008", "TRY003", "TRY300", "TRY301", "TRY400", "TRY401", "ARG001", "ARG002", "S101", "S106", "S110", "S112", "E501", "B008", "TRY003", "TRY300", "TRY301", "TRY400", "TRY401", "ARG001", "ARG002", "S101", "S106", "S110", "S112", "RUF012", "S603", "S607", "S324", "E402"]
+ignore = ["E501", "B008", "TRY003", "TRY300", "TRY301", "TRY400", "TRY401", "ARG001", "ARG002", "S101", "S106", "E501", "B008", "TRY003", "TRY300", "TRY301", "TRY400", "TRY401", "ARG001", "ARG002", "S101", "S106", "RUF012", "S603", "S607", "S324", "E402"]
 
 [tool.ruff.format]
 quote-style = "double"
@@ -83,6 +83,7 @@ indent-style = "space"
 [tool.pytest.ini_options]
 asyncio_mode = "auto"
 testpaths = ["tests"]
+addopts = ["--cov=arr_mcp", "--cov-report=term-missing", "--cov-fail-under=50"]
 
 [tool.mypy]
 python_version = "3.12"

@@ -70,3 +70,31 @@ def register_health_tools(mcp, clients: dict) -> None:
             "message": f"{reachable}/{total} services reachable",
             "data": results,
         }
+
+    @mcp.tool(
+        annotations={"readOnlyHint": False, "destructiveHint": True},
+        version=TOOL_VERSION,
+    )
+    async def arr_shutdown() -> dict:
+        """Shut down the arr-mcp server gracefully (agents use this instead of killing the process).
+
+        Only terminates the MCP server process itself; managed *arr services are untouched.
+
+        ## Return Format
+        {"success": bool, "message": str}
+
+        ## Examples
+        arr_shutdown()
+        """
+        import os
+        import threading
+
+        def _exit_later() -> None:
+            import time
+
+            time.sleep(0.5)
+            os._exit(0)
+
+        threading.Thread(target=_exit_later, daemon=True).start()
+        logger.info("arr_shutdown requested - exiting")
+        return {"success": True, "message": "arr-mcp shutting down"}

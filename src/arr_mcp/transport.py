@@ -25,7 +25,9 @@ def run_server(
     api_router=None,
 ) -> None:
     transport, cli_port = parse_argv_flags()
-    transport = os.getenv("ARR_MCP_TRANSPORT") or transport
+    # Fleet transport contract: repo ARR_MCP_* vars first, fleet MCP_* vars
+    # second (used by the MCPB launch check and container hosts), CLI flags last.
+    transport = os.getenv("ARR_MCP_TRANSPORT") or os.getenv("MCP_TRANSPORT") or transport
     # Tauri spawn passes ARR_TAURI=1 (no MCP_TRANSPORT/--http); force HTTP so the
     # frozen backend opens the port the webview polls instead of running stdio.
     if os.getenv("ARR_TAURI", "").lower() in ("1", "true", "yes"):
@@ -35,8 +37,8 @@ def run_server(
         logger.info("Starting %s in STDIO mode", server_name)
         mcp.run(transport="stdio")
     elif transport in ("http", "sse"):
-        host = os.getenv("ARR_MCP_HOST", "127.0.0.1")
-        port = int(os.getenv("ARR_MCP_PORT", str(cli_port or 10938)))
+        host = os.getenv("ARR_MCP_HOST", os.getenv("MCP_HOST", "127.0.0.1"))
+        port = int(os.getenv("ARR_MCP_PORT", os.getenv("MCP_PORT", str(cli_port or 10938))))
         path = os.getenv("ARR_MCP_PATH", "/mcp")
         logger.info("Starting %s in %s mode on %s:%d%s", server_name, transport.upper(), host, port, path)
         _run_http(mcp, server_name, host, port, path, transport, api_router)
@@ -64,18 +66,22 @@ def _run_http(
 
     app = FastAPI(title=server_name, version=__version__, lifespan=mcp_app.lifespan)
 
-    _tauri = os.environ.get("ARR_TAURI", "").lower() in ("1", "true", "yes")
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
             "http://127.0.0.1:10938",
             "http://localhost:10938",
             "http://goliath:10938",
+            "http://127.0.0.1:10939",
+            "http://localhost:10939",
+            "http://goliath:10939",
             "http://tauri.localhost",
             "https://tauri.localhost",
             "tauri://localhost",
         ],
-        allow_origin_regex=r"https?://tauri\.localhost(:\d+)?" if _tauri else None,
+        # Unconditional: LAN hostnames + Tailscale MagicDNS must pass the
+        # browser preflight in every mode, not only under ARR_TAURI.
+        allow_origin_regex=r"https?://(tauri\.localhost|localhost|127\.0\.0\.1|goliath|[a-z0-9-]+\.tail[0-9a-z-]*\.ts\.net)(:\d+)?",
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],
@@ -89,6 +95,21 @@ def _run_http(
             from fastapi.responses import RedirectResponse
 
             return RedirectResponse("/api/health", status_code=307)
+
+        @app.post("/api/shutdown")
+        async def api_shutdown():
+            """Orderly exit for fleet launchers: respond 200, then exit so
+            long-running flows checkpoint before the process is bounced."""
+            import threading
+            import time
+
+            def _exit_later() -> None:
+                time.sleep(0.5)
+                os._exit(0)
+
+            threading.Thread(target=_exit_later, daemon=True).start()
+            logger.info("POST /api/shutdown - exiting")
+            return {"success": True, "message": "shutting down"}
 
     app.mount("/", mcp_app)
 

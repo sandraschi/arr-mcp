@@ -93,6 +93,10 @@ class BaseArrClient:
         else:
             resp = await client.delete(path, params=params)
         resp.raise_for_status()
+        # Servarr APIs return 200 with an EMPTY body on successful DELETE.
+        # resp.json() would raise JSONDecodeError (false failure) — see issue #2.
+        if not resp.content:
+            return {}
         return resp.json()
 
     # ── API info ──────────────────────────────────────────────────

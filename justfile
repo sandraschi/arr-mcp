@@ -14,6 +14,9 @@ install:
 start:
     uv run arr-mcp
 
+serve:
+    uv run python -m arr_mcp --http --port 10938
+
 webapp:
     powershell webapp/start.ps1
 
@@ -68,6 +71,11 @@ ci: lint typecheck test
     cd webapp; npx @biomejs/biome check src/
     cd webapp; npx tsc -b
     cd webapp; npm run build
+
+# Fleet five-gate certification: lint + types + tests + frontend build
+certify: ci
+    uv run pytest tests/ -q
+    Write-Host "arr-mcp gates green." -ForegroundColor Green
 
 clean:
     Get-ChildItem -Recurse -Include '__pycache__','*.pyc','.pytest_cache','.ruff_cache','.mypy_cache' -Path . | Remove-Item -Recurse -Force

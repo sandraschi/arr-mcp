@@ -133,8 +133,8 @@ export default function InboxPage() {
 	}
 
 	return (
-		<div className="animate-fade-in">
-			<div className="flex items-center gap-3 mb-1">
+		<div className="animate-fade-in" data-testid="inbox-page">
+			<div className="flex items-center gap-3 mb-1" data-testid="inbox-header">
 				<Inbox size={24} className="text-zinc-300" />
 				<h2 className="text-2xl font-bold">Inbox</h2>
 				<span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded" data-testid="inbox-count">

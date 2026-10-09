@@ -7,4 +7,5 @@ sys.path.insert(0, ".")
 
 from arr_mcp.server import main
 
-main()
+if __name__ == "__main__":
+    main()

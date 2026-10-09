@@ -1,0 +1,48 @@
+# arr-mcp — llms-full.txt
+
+Unified FastMCP (>=3.4.4,<4) server for Radarr, Sonarr, Lidarr, Prowlarr,
+Readarr, Overseerr, Bazarr + Jellyfin/Plex/Emby availability checks.
+
+## Ports
+
+- Backend 10938: FastMCP HTTP `/mcp` + REST `/api/*` + SSE `/api/logs/stream`
+- Frontend 10939: Vite React dashboard (proxies `/api`, `/mcp` → backend)
+
+## Tools (25; only for configured services)
+
+radarr_movies | sonarr_series | sonarr_episodes | lidarr_artists | lidarr_albums |
+readarr_authors | readarr_books | prowlarr_indexers | prowlarr_search |
+prowlarr_applications | prowlarr_history | bazarr_subtitles | overseerr_requests |
+overseerr_search | overseerr_users | arr_orchestrate | arr_calendar | arr_stats |
+arr_health | arr_shutdown | arr_help | arr_agentic | arr_health_card |
+arr_calendar_card | arr_stats_card
+
+All return {"success", "message", "data"}. Start: arr_health() then
+arr_orchestrate(operation="request", media_title="...").
+
+## REST (/api/* on :10938)
+
+health | capabilities | skills | diagnostics | v1/diagnostics | logs |
+logs/stream | radarr/summary | radarr/movies | sonarr/summary | sonarr/series |
+lidarr/summary | prowlarr/summary | readarr/summary | overseerr/summary |
+bazarr/summary | orchestrator/summary | llm/discover | llm/providers | llm/models |
+llm/onboarding | llm/chat (POST) | chat (POST, skill-first) | shutdown (POST)
+
+## Resources / prompts
+
+arr://config | arr://quickstart | arr://help | arr://capabilities;
+orchestrate_media(title); stack_health_check().
+
+## Config vars (.env; see docs/CONFIGURATION.md)
+
+RADARR|SONARR|LIDARR|PROWLARR|READARR|OVERSEERR|BAZARR × (URL, API_KEY, ENABLED);
+JELLYFIN_URL/API_KEY; PLEX_URL/TOKEN; EMBY_URL/API_KEY;
+ARR_MCP_TRANSPORT=stdio|http|sse; ARR_MCP_HOST; ARR_MCP_PORT=10938; ARR_MCP_PATH=/mcp;
+ARR_SAMPLING_BASE_URL; ARR_SAMPLING_MODEL; ARR_SAMPLING_API_KEY; ARR_LOG_LEVEL; ARR_TIMEOUT.
+
+## Architecture
+
+server.py (client wiring + auto-discovery) → app.py (FastMCP singleton, lifespan,
+resources, prompts) → tools/* (register_*_tools) → transport.py (CORS, /api/shutdown)
+→ api.py (REST). services/* httpx clients over services/base.py. utils/* bridges.
+Entry: python -m arr_mcp [--http --port 10938]. PyInstaller sidecar: run_server.py.

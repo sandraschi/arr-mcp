@@ -1,4 +1,4 @@
-﻿# Per-repo fleet start config for arr-mcp
+# Per-repo fleet start config for arr-mcp
 # Edit ports/backend target here - start.ps1 is fleet-standard.
 @{
     Name         = 'arr-mcp'
@@ -11,6 +11,7 @@
         Module     = 'arr_mcp'
         ServeArgs  = @('--http', '--port', '10938')
         SyncExtras = @('dev')
+        SyncOnStart  = $true
     }
     Frontend = @{
         Kind           = 'vite-npm'

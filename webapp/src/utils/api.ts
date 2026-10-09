@@ -1,5 +1,15 @@
-/** Empty in Vite dev (proxy); absolute URL in Tauri production build. */
-export const API_BASE = import.meta.env.DEV ? "" : "http://127.0.0.1:10938";
+/** True inside the Tauri webview (backend is a sidecar on 127.0.0.1:10938). */
+function isTauri(): boolean {
+	return typeof window !== "undefined" && ("__TAURI__" in window || "__TAURI_INTERNALS__" in window);
+}
+
+/**
+ * Same-origin (vite proxy) everywhere EXCEPT inside Tauri, where the webview
+ * origin cannot use the dev proxy and must call the sidecar absolutely.
+ * Hardcoded absolute backend URLs outside a Tauri gate die on CORS from any
+ * non-localhost tab (LAN name, Tailscale MagicDNS).
+ */
+export const API_BASE = isTauri() ? "http://127.0.0.1:10938" : "";
 const DEFAULT_TIMEOUT = 5000;
 
 export class ApiError extends Error {

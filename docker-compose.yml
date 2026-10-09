@@ -1,5 +1,3 @@
-version: "3.8"
-
 services:
   # ── Radarr (Movies) ──
   radarr:
@@ -127,4 +125,42 @@ services:
       - ./data/books:/data/books
     ports:
       - 8096:8096
+    restart: unless-stopped
+
+  # ── arr-mcp backend (this repo, HTTP transport for remote MCP hosting) ──
+  arr-mcp:
+    build: .
+    container_name: arr-mcp
+    environment:
+      - ARR_MCP_TRANSPORT=http
+      - ARR_MCP_HOST=0.0.0.0
+      - ARR_MCP_PORT=10938
+      - TZ=Europe/Vienna
+    # Secrets come from the repo-root .env (same file as bare-metal runs).
+    # Missing file is tolerated so `docker compose config` stays green.
+    env_file:
+      - path: .env
+        required: false
+    ports:
+      - 10938:10938
+    depends_on:
+      - radarr
+      - sonarr
+    restart: unless-stopped
+
+  # ── arr-mcp dashboard (Vite with /api+/mcp proxy to the backend above) ──
+  webapp:
+    build:
+      context: .
+      dockerfile: webapp/Dockerfile
+    container_name: arr-mcp-webapp
+    environment:
+      - VITE_PORT=10939
+      - VITE_API_TARGET=http://arr-mcp:10938
+    ports:
+      - 10939:10939
+    depends_on:
+      - arr-mcp
+    profiles:
+      - webapp
     restart: unless-stopped

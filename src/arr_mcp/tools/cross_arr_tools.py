@@ -153,7 +153,14 @@ def register_cross_arr_tools(mcp, clients: dict, config) -> None:
 
                 for server_name, bridge, step_label in servers_to_check:
                     if bridge.is_configured:
-                        result = await bridge.check_availability(media_title, media_type=mt)
+                        try:
+                            result = await bridge.check_availability(media_title, media_type=mt)
+                        except Exception as exc:
+                            # A configured-but-unreachable media server must not abort
+                            # the whole orchestration (issue #1: Emby errors out).
+                            logger.warning("%s check failed for '%s': %s", server_name, media_title, exc)
+                            pipeline.append(f"{step_label}_error")
+                            continue
                         pipeline.append(step_label)
                         if result["in_library"]:
                             return {

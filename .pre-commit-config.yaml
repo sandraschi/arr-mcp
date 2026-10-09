@@ -1,13 +1,72 @@
+# Fleet: mcp-central-docs/templates/pre-commit-config.yaml.template
+# Copy to {repo}/.pre-commit-config.yaml
+# Setup: just bootstrap  (uv sync dev deps + pre-commit install + webapp npm ci)
+# Also copy scripts/pre-commit-biome.ps1 from templates/pre-commit-biome.ps1 when webapp/ or web_sota/ exists.
+
 repos:
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.16.0
     hooks:
       - id: ruff
         args: [--fix]
+        # DO NOT add `files:` here to narrow scope (Trap 7c). Pre-commit and ci.yml must
+        # lint the same paths. Fix violations or add paths to BOTH — never hook-only.
       - id: ruff-format
+        # Same rule as ruff above — no narrower `files:` than CI.
 
-  - repo: https://github.com/biomejs/pre-commit
-    rev: v1.9.4
+  - repo: local
     hooks:
-      - id: biome-check
-        args: [--config-path=webapp/biome.json]
+      - id: ps51-parse
+        name: powershell 5.1 parse gate
+        entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-Ps51Parse.ps1 -Path .
+        language: system
+        # Fleet speaks 5.1 only (POWERSHELL_51_STANDARD.md). Runs only when
+        # scripts/recipes change; the script is vendored per repo (P2 sweep) -
+        # keep the vendor copy in sync with mcp-central-docs/scripts/.
+        files: (\.ps1$|\.just$|justfile$)
+        pass_filenames: false
+        require_serial: true
+
+      - id: biome-web
+        name: biome check (webapp)
+        entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/pre-commit-biome.ps1
+        language: system
+        # Keep in sync with ci.yml.template frontend detection + pre-commit-biome.ps1
+        # (webapp/ canonical first, then legacy variants).
+        files: ^(webapp(/frontend)?|web_sota|web-sota|web|frontend|ui|web_app)/(.*\.(ts|tsx|js|jsx)|biome\.json)$
+        pass_filenames: false
+        require_serial: true
+
+      - id: bat-crlf
+        name: bat files must be CRLF (TRAPS #43)
+        entry: powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/pre-commit-bat-crlf.ps1
+        language: system
+        # Check-only: fails on LF-only .bat/.cmd (cmd.exe misparses paren blocks).
+        # AI file tools write LF, so this fires exactly when an agent adds a bat.
+        # Vendor the script per repo from scripts/pre-commit-bat-crlf.ps1.
+        files: \.(bat|cmd)$
+        require_serial: true
+
+      - id: ps1-ascii-only
+        name: powershell files must be ASCII (PS 5.1 reads BOM-less as ANSI)
+        # Without a BOM, 5.1 decodes .ps1 as Windows-1252 and pwsh 7 as UTF-8:
+        # any non-ASCII char (em dash, umlaut, emoji) parses differently and
+        # can break string quoting on 5.1 only. Pure ASCII is identical on
+        # both, BOM or not. Any non-ASCII byte fails; a leading UTF-8 BOM is
+        # allowed. pygrep matches raw bytes per line (\A = line start).
+        # Superset of check-unicode-safe.ps1 for PowerShell files; no vendoring.
+        entry: '[\x80-\xff](?<!\A\xef)(?<!\A\xef\xbb)(?<!\A\xef\xbb\xbf)'
+        language: pygrep
+        files: \.(ps1|psm1|psd1)$
+
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+        # Fleet rule (BUG-064): never strip Markdown - hard-break trailing
+        # double-spaces are intentional, and hook-rewrites deadlock commits.
+        exclude_types: [markdown]
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-added-large-files
+        args: [--maxkb=5120]

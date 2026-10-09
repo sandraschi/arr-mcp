@@ -21,5 +21,14 @@ build/
 
 # Non-MCP components (webapp, native, scripts)
 native/
-web_sota/
+webapp/
 scripts/
+
+# Runtime data (never ship databases or user config)
+data/
+*.sqlite3
+*.db*
+
+# Batch-edit safety backups
+*.bak
+*.bak.*

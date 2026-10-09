@@ -15,6 +15,12 @@ class TestEmbyBridge:
         bridge = EmbyBridge("http://localhost:8096", "test-key")
         assert bridge.is_configured
 
+    def test_placeholder_key_counts_as_unconfigured(self):
+        """Regression test for issue #1: `.env.example` placeholder keys must
+        not count as configured."""
+        bridge = EmbyBridge("http://localhost:8096", "your-emby-api-key-here")
+        assert not bridge.is_configured
+
     @pytest.mark.asyncio
     async def test_search_not_configured(self):
         bridge = EmbyBridge("", "")

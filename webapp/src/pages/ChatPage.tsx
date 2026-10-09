@@ -1,12 +1,11 @@
 import { Bot, Download, Loader2, Send, Settings, Trash2, User } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
+import { useLlm } from "../store/llm";
 import {
 	type LLMConfig,
-	type LMStudioModel,
-	type OllamaModel,
-	chatWithLLM,
-	fetchLMStudioModels,
-	fetchOllamaModels,
+	chatViaBackend,
+	fetchBackendModels,
+	fetchSkill,
 	loadLLMConfig,
 	saveLLMConfig,
 } from "../utils/llm";
@@ -76,11 +75,23 @@ export default function ChatPage() {
 	const [messages, setMessages] = useState<Message[]>(() => loadHistory());
 	const [input, setInput] = useState("");
 	const [loading, setLoading] = useState(false);
-	const [models, setModels] = useState<(OllamaModel | LMStudioModel)[]>([]);
+	const [models, setModels] = useState<string[]>([]);
 	const [showSettings, setShowSettings] = useState(!config.selectedModel);
 	const [loadingModels, setLoadingModels] = useState(false);
 	const [personalityId, setPersonalityId] = useState(() => loadPersonality());
+	const [skillLoaded, setSkillLoaded] = useState(false);
+	const llmDetected = useLlm((s) => ({ ollama: s.ollamaDetected, lmstudio: s.lmstudioDetected }));
+	const refreshLlm = useLlm((s) => s.refresh);
 	const chatEndRef = useRef<HTMLDivElement>(null);
+
+	useEffect(() => {
+		// Skill-first: load the backend domain skill on mount (system preprompt
+		// is composed server-side by POST /api/chat).
+		fetchSkill()
+			.then(() => setSkillLoaded(true))
+			.catch(() => setSkillLoaded(false));
+		refreshLlm();
+	}, [refreshLlm]);
 
 	useEffect(() => {
 		chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -102,12 +113,11 @@ export default function ChatPage() {
 	async function loadModels(cfg: LLMConfig) {
 		setLoadingModels(true);
 		try {
-			if (cfg.provider === "ollama") {
-				const m = await fetchOllamaModels(cfg.ollamaUrl);
-				setModels(m);
-			} else if (cfg.provider === "lmstudio") {
-				const m = await fetchLMStudioModels(cfg.lmstudioUrl);
-				setModels(m);
+			if (cfg.provider !== "none") {
+				const base = cfg.provider === "ollama" ? cfg.ollamaUrl : cfg.lmstudioUrl;
+				setModels(await fetchBackendModels(cfg.provider, base));
+			} else {
+				setModels([]);
 			}
 		} catch {
 			setModels([]);
@@ -123,7 +133,7 @@ export default function ChatPage() {
 		setInput("");
 		setLoading(true);
 		try {
-			const reply = await chatWithLLM(config, [...messages, userMsg]);
+			const reply = await chatViaBackend(config, personalityId, [...messages, userMsg]);
 			setMessages((prev) => [...prev, { role: "assistant", content: reply }]);
 		} catch {
 			setMessages((prev) => [
@@ -160,11 +170,16 @@ export default function ChatPage() {
 					<Bot size={24} className="text-zinc-300" />
 					<h2 className="text-2xl font-bold">Chat</h2>
 					<span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded" data-testid="skill-badge">
-						arr-mcp
+						{skillLoaded ? "skill-first: arr-mcp" : "arr-mcp"}
 					</span>
 					<span
 						className={`inline-block w-2 h-2 rounded-full ${config.provider === "none" ? "bg-red-500" : "bg-green-500"}`}
 						data-testid="backend-dot"
+						title={
+							llmDetected.ollama || llmDetected.lmstudio
+								? "Local LLM detected by backend"
+								: "No local LLM detected by backend"
+						}
 					/>
 					<span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded">
 						{config.provider === "none" ? "No LLM" : config.provider === "ollama" ? "Ollama" : "LM Studio"}
@@ -292,17 +307,11 @@ export default function ChatPage() {
 									className="w-full bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-1.5 text-sm focus:outline-none focus:border-zinc-500"
 								>
 									<option value="">Select a model...</option>
-									{config.provider === "ollama"
-										? (models as OllamaModel[]).map((m) => (
-												<option key={m.name} value={m.name}>
-													{m.name}
-												</option>
-											))
-										: (models as LMStudioModel[]).map((m) => (
-												<option key={m.id} value={m.id}>
-													{m.id}
-												</option>
-											))}
+									{models.map((m) => (
+										<option key={m} value={m}>
+											{m}
+										</option>
+									))}
 								</select>
 							)}
 						</div>

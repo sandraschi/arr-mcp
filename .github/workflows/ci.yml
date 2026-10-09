@@ -2,7 +2,9 @@ name: CI
 
 on:
   push:
-    tags: ["v*"]
+    branches: ["main", "master"]
+  pull_request:
+    branches: ["main", "master"]
   workflow_dispatch:
 
 jobs:
@@ -20,7 +22,8 @@ jobs:
       - uses: astral-sh/setup-uv@v5
       - run: uv sync --group dev
       - run: uv run ruff check src/arr_mcp tests/
-      - run: uv run pytest -x --tb=short -k "not slow"
+      - run: uv run ruff format src/arr_mcp tests/ --check
+      - run: uv run pytest -q
 
   webapp:
     name: Webapp frontend
@@ -32,7 +35,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version: "22"
           cache: "npm"
           cache-dependency-path: webapp/package-lock.json
       - run: npm ci

@@ -8,7 +8,7 @@ build/
 *.egg
 
 # uv
-uv.lock
+# NOTE: uv.lock is COMMITTED per fleet standard (reproducible installs) - do NOT ignore it.
 
 # IDE
 .vscode/
@@ -46,6 +46,7 @@ webapp/blob-report/
 native/target/
 native/gen/
 native/binaries/
+native/resources/*.exe
 
 # Runtime logs
 *.log
@@ -55,3 +56,12 @@ native/binaries/
 # on every pack. Never hand-edit, never commit.
 mcpb/src/
 
+# MCPB distributables (built by scripts/mcpb-pack.ps1 into dist/)
+*.mcpb
+
+# Batch-edit safety backups (see Batch Mutation Safety rule)
+*.bak
+*.bak.*
+
+# Assfix working snapshots (regenerable; committed copy lives in docs/assess-reports/)
+reports/

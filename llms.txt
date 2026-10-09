@@ -1,0 +1,4 @@
+# arr-mcp
+
+Model Context Protocol server + dashboard for the *arr stack. Full reference:
+`llms-full.txt`. New here? Start at `docs/ONBOARDING.md` (10-minute setup).
