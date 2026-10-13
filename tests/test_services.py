@@ -150,7 +150,7 @@ class TestBaseArrClient:
         """Regression test for issue #2: Servarr returns 200 with an EMPTY body
         on successful DELETE. Must return {} instead of raising JSONDecodeError."""
         httpx_mock.add_response(
-            url=f"{RADARR_URL}/api/v3/movie/42?deleteFiles=false",
+            url=f"{RADARR_URL}/api/v3/movie/42?deleteFiles=false&addImportExclusion=false",
             method="DELETE",
             status_code=200,
             content=b"",
