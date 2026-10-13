@@ -10,6 +10,7 @@ from __future__ import annotations
 import collections
 import logging
 
+from rich.console import Console
 from rich.logging import RichHandler
 
 from arr_mcp import __version__
@@ -42,6 +43,7 @@ from arr_mcp.tools.overseerr_tools import register_overseerr_tools
 from arr_mcp.tools.prefab_tools import register_prefab_tools
 from arr_mcp.tools.prowlarr_tools import register_prowlarr_tools
 from arr_mcp.tools.radarr_tools import register_radarr_tools
+from arr_mcp.tools.readarr_options import register_readarr_options
 from arr_mcp.tools.readarr_tools import register_readarr_tools
 from arr_mcp.tools.sonarr_tools import register_sonarr_tools
 from arr_mcp.transport import run_server
@@ -63,7 +65,7 @@ class BufferHandler(logging.Handler):
 
 
 def setup_logging(log_level: str = "INFO") -> None:
-    handler = RichHandler(rich_tracebacks=True, markup=True)
+    handler = RichHandler(console=Console(stderr=True), rich_tracebacks=True, markup=True)
     handler.setLevel(getattr(logging, log_level.upper(), logging.INFO))
     logging.basicConfig(
         level=getattr(logging, log_level.upper(), logging.INFO),
@@ -116,6 +118,7 @@ def main() -> None:
     register_lidarr_tools(mcp, lidarr_client)
     register_prowlarr_tools(mcp, prowlarr_client)
     register_readarr_tools(mcp, readarr_client)
+    register_readarr_options(mcp, readarr_client)
     register_overseerr_tools(mcp, overseerr_client)
     register_bazarr_tools(mcp, bazarr_client)
     register_cross_arr_tools(mcp, clients, config)

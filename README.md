@@ -32,7 +32,7 @@ Other MCP clients (Cursor, Windsurf, opencode):
 ## Features
 
 - **7 services, 1 MCP server** — Radarr (Movies), Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books), Overseerr (Requests), Bazarr (Subtitles)
-- **25 MCP tools** — 22 portmanteau tools + 3 Prefab card tools, 100+ operations
+- **28 MCP tools** — 19 portmanteau tools + 6 single-purpose tools + 3 Prefab card tools, 109 operations
 - **Cross-arr orchestration** — request a title, auto-routes to correct arr with Jellyfin availability check
 - **Prefab-UI cards** — `arr_health_card`, `arr_calendar_card`, `arr_stats_card` — rich interactive cards in Claude Desktop, Cursor
 - **Prowlarr indexer backbone** — unified search across all indexers
@@ -115,7 +115,7 @@ npm run dev        # → http://localhost:10939
 arr-mcp/
 ├── src/arr_mcp/             # Python backend (FastMCP 3.3)
 │   ├── services/            # 8 arr clients (BaseArrClient + 7 arrs)
-│   ├── tools/               # 25 MCP tools (22 portmanteau + 3 prefab cards)
+│   ├── tools/               # 28 MCP tools (19 portmanteau + 6 single-purpose + 3 prefab cards)
 │   ├── prefabs.py           # Prefab-UI card builders (health, calendar, stats, orchestrate)
 │   ├── utils/               # Jellyfin bridge
 │   ├── api.py               # REST router with /api/{service}/summary

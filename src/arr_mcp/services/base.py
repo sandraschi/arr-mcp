@@ -87,6 +87,7 @@ class BaseArrClient:
         return resp.json()
 
     async def _delete(self, path: str, json: dict[str, Any] | None = None, **params: Any) -> dict[str, Any]:
+        """Accept successful DELETE responses with no JSON body."""
         client = await self._ensure_client()
         if json is not None:
             resp = await client.request("DELETE", path, params=params, json=json)
@@ -95,7 +96,7 @@ class BaseArrClient:
         resp.raise_for_status()
         # Servarr APIs return 200 with an EMPTY body on successful DELETE.
         # resp.json() would raise JSONDecodeError (false failure) — see issue #2.
-        if not resp.content:
+        if not resp.content.strip():
             return {}
         return resp.json()
 
