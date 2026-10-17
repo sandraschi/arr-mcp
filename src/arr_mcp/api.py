@@ -122,6 +122,17 @@ def _not_configured_payload(service: str) -> dict:
     }
 
 
+def _not_configured_list_payload(service: str, label: str) -> dict:
+    """200-shape for unconfigured list endpoints: empty items, never 404."""
+    return {
+        "success": True,
+        "message": f"{label} is not configured",
+        "data": [],
+        "enabled": False,
+        "setup": SERVICE_SETUP.get(service, {}),
+    }
+
+
 def create_api_router(
     clients: dict,
     log_buffer: collections.deque | list[dict] | None = None,
@@ -395,7 +406,7 @@ def create_api_router(
     async def radarr_movies(limit: int = 50):
         client = clients.get("radarr")
         if client is None:
-            raise HTTPException(404, "Radarr not configured")
+            return JSONResponse(content=_not_configured_list_payload("radarr", "Radarr"))
         try:
             movies = await client.get_movies()
             return {"success": True, "data": movies[:limit]}
@@ -430,7 +441,7 @@ def create_api_router(
     async def sonarr_series(limit: int = 50):
         client = clients.get("sonarr")
         if client is None:
-            raise HTTPException(404, "Sonarr not configured")
+            return JSONResponse(content=_not_configured_list_payload("sonarr", "Sonarr"))
         try:
             series_list = await client.get_series()
             return {"success": True, "data": series_list[:limit]}

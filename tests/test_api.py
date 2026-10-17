@@ -135,6 +135,20 @@ class TestApiRouter:
         assert resp.status_code == 500
 
     @pytest.mark.asyncio
+    async def test_list_endpoints_never_404(self):
+        app = FastAPI()
+        app.include_router(create_api_router({"radarr": None, "sonarr": None}))
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+            for path in ("/api/radarr/movies", "/api/sonarr/series"):
+                resp = await http_client.get(path)
+                assert resp.status_code == 200, path
+                body = resp.json()
+                assert body["success"] is True, path
+                assert body["data"] == [], path
+                assert body["enabled"] is False, path
+
+    @pytest.mark.asyncio
     async def test_orchestrator_summary(self, client):
         resp = await client.get("/api/orchestrator/summary")
         assert resp.status_code == 200
