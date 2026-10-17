@@ -14,6 +14,15 @@
   `POST /api/config/services`, `DELETE /api/config/services/{service}`.
 - Setup panels now point at Settings → Services instead of `.env` editing.
 
+### Fixed
+- `arr_orchestrate request` never worked against real services: `_add_to_arr`
+  passed Servarr camelCase keys (`tmdbId=`) to snake_case client signatures
+  (`tmdb_id`), swallowed by `**kwargs` — mocks hid it, production 500d.
+  Now mapped per client + covered by real-signature contract tests.
+- Adds without a configured root folder returned a raw Radarr 400; now a
+  structured `add_to_<arr>_failed` result naming the fix (Settings → Media
+  Management). Add failures no longer 500 the endpoint.
+
 ## [Unreleased] — 2026-10-17 (functional pass)
 
 ### Fixed (chat was crashing)

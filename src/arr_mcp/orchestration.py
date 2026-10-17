@@ -138,6 +138,19 @@ async def request_media(
     add_result = await add_to_arr(arr_client, media_title, mt, quality_profile_id, root_folder_path)
     pipeline.append("add_to_arr")
 
+    if isinstance(add_result, dict) and add_result.get("error"):
+        return {
+            "success": False,
+            "message": f"Could not add '{media_title}' to {service_key(arr_name)}: {add_result['error']}",
+            "pipeline": pipeline,
+            "data": {
+                "in_library": False,
+                "action": f"add_to_{service_key(arr_name)}_failed",
+                "media_type": mt.value,
+                "add_result": add_result,
+            },
+        }
+
     return {
         "success": True,
         "message": f"'{media_title}' added to {service_key(arr_name)}.",
@@ -205,19 +218,22 @@ async def add_to_arr(
     root_folder_path: str | None = None,
 ) -> dict:
     """Add title to the appropriate arr."""
-    # First lookup the item
+    # First lookup the item. Client methods take snake_case params; the
+    # lookup payloads use Servarr camelCase keys — never mix the two (the
+    # **kwargs catch-alls swallow unknown names and required positionals
+    # then go missing, which mocks never catch).
     lookup_methods = {
-        MediaType.MOVIE: ("lookup_movie", "add_movie", "tmdbId", "title"),
-        MediaType.SERIES: ("lookup_series", "add_series", "tvdbId", "title"),
-        MediaType.ALBUM: ("lookup_artist", "add_artist", "foreignArtistId", "artistName"),
-        MediaType.BOOK: ("lookup_author", "add_author", "foreignAuthorId", "authorName"),
+        MediaType.MOVIE: ("lookup_movie", "add_movie", "tmdbId", "tmdb_id", "title", True),
+        MediaType.SERIES: ("lookup_series", "add_series", "tvdbId", "tvdb_id", "title", True),
+        MediaType.ALBUM: ("lookup_artist", "add_artist", "foreignArtistId", "foreign_artist_id", None, False),
+        MediaType.BOOK: ("lookup_author", "add_author", "foreignAuthorId", "foreign_author_id", None, False),
     }
 
     lookup_meta = lookup_methods.get(media_type)
     if not lookup_meta:
         return {"error": f"Unsupported media type: {media_type}"}
 
-    lookup_method_name, add_method_name, id_field, title_field = lookup_meta
+    lookup_method_name, add_method_name, id_field, id_param, title_field, takes_title = lookup_meta
     lookup_method = getattr(client, lookup_method_name)
     add_method = getattr(client, add_method_name)
 
@@ -226,6 +242,9 @@ async def add_to_arr(
         return {"error": f"No results found for '{title}'"}
 
     first = results[0]
+    foreign_id = first.get(id_field)
+    if not foreign_id:
+        return {"error": f"Lookup result for '{title}' has no {id_field}"}
 
     # Resolve quality profile and root folder if not provided
     if not quality_profile_id:
@@ -241,14 +260,26 @@ async def add_to_arr(
             folders = await client.get_root_folders()
             if folders:
                 root_folder_path = folders[0]["path"]
-        except Exception:
-            root_folder_path = "/data"
+        except Exception as exc:
+            logger.debug("Root folder lookup failed: %s", exc)
+
+    if not root_folder_path:
+        return {
+            "error": (
+                "no root folder configured — add one in the service UI under "
+                "Settings → Media Management (e.g. /movies on compose), then retry"
+            )
+        }
 
     kwargs: dict = {
-        id_field: first.get(id_field),
-        title_field: first.get(title_field, title),
+        id_param: foreign_id,
         "quality_profile_id": quality_profile_id,
         "root_folder_path": root_folder_path,
     }
+    if takes_title and title_field:
+        kwargs["title"] = first.get(title_field, title)
 
-    return await add_method(**kwargs)
+    try:
+        return await add_method(**kwargs)
+    except Exception as exc:
+        return {"error": f"{add_method.__name__} failed: {exc}"}
