@@ -149,6 +149,34 @@ class TestApiRouter:
                 assert body["enabled"] is False, path
 
     @pytest.mark.asyncio
+    async def test_docker_start_rejects_unknown_service(self, client):
+        resp = await client.post("/api/docker/start", json={"service": "rm -rf /"})
+        assert resp.status_code == 400
+
+    @pytest.mark.asyncio
+    async def test_docker_start_validation(self, client):
+        resp = await client.post("/api/docker/start", json={})
+        assert resp.status_code == 422
+
+    @pytest.mark.asyncio
+    async def test_docker_start_mocked_success(self, client, monkeypatch):
+        import subprocess
+
+        def fake_run(*args, **kwargs):
+            cmd = args[0]
+            assert cmd[:2] == ["docker", "compose"]
+            assert cmd[2] == "-f" and cmd[4:7] == ["up", "-d", "bazarr"]
+            assert kwargs.get("timeout") == 180
+            return subprocess.CompletedProcess(cmd, 0, stdout="Container bazarr Started\n", stderr="")
+
+        monkeypatch.setattr("arr_mcp.discovery.subprocess.run", fake_run)
+        resp = await client.post("/api/docker/start", json={"service": "bazarr"})
+        assert resp.status_code == 200
+        body = resp.json()
+        assert body["success"] is True
+        assert "bazarr" in body["message"]
+
+    @pytest.mark.asyncio
     async def test_orchestrator_summary(self, client):
         resp = await client.get("/api/orchestrator/summary")
         assert resp.status_code == 200

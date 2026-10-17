@@ -37,6 +37,9 @@
   services reachable, detected-Docker-containers section, fleet siblings section.
 - `GET /api/docker`: fail-soft `docker ps` detection of Servarr/media containers
   (name, image, ports, state) — surfaces "container running, key missing" states.
+- `POST /api/docker/start`: start one allowlisted compose service server-side
+  (radarr…bazarr, no shell, 3-min cap) — the setup panels' green
+  "Start now" button; verified live by pulling and starting Bazarr through it.
 - `GET /api/fleet`: live probes of plex-mcp (`:10740`) and jellyfin-mcp
   (`:10934`) with dashboard deep-links.
 - `docs/services/*.md`: per-service guides (install, key, env, ops, triage).

@@ -19,4 +19,11 @@ test.describe("Service pages", () => {
 			await expect(page.getByText("Raw API Response")).toBeVisible({ timeout: 15_000 });
 		});
 	}
+
+	test("unconfigured service shows setup panel with start button", async ({ page }) => {
+		await page.goto("/bazarr");
+		await expect(page.getByTestId("setup-panel-bazarr")).toBeVisible({ timeout: 15_000 });
+		// Presence only: clicking would pull a real image.
+		await expect(page.getByTestId("start-container-bazarr")).toBeVisible();
+	});
 });

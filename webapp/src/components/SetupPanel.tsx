@@ -1,5 +1,7 @@
-import { ArrowRight, Container, ExternalLink, Key } from "lucide-react";
+import { ArrowRight, Container, ExternalLink, Key, Loader2, Play } from "lucide-react";
+import { useState } from "react";
 import { Link } from "react-router-dom";
+import { apiFetch } from "../utils/api";
 
 export interface ServiceSetup {
 	label: string;
@@ -29,6 +31,35 @@ export default function SetupPanel({
 }) {
 	const port = containerPort ?? setup.default_port;
 	const serviceUrl = `http://localhost:${port}`;
+	const [starting, setStarting] = useState(false);
+	const [startError, setStartError] = useState("");
+	const [startOutput, setStartOutput] = useState("");
+	const [started, setStarted] = useState(false);
+
+	async function startContainer() {
+		if (starting) return;
+		setStarting(true);
+		setStartError("");
+		setStartOutput("");
+		try {
+			const result = await apiFetch<{ success: boolean; message: string; output: string }>("/api/docker/start", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({ service: serviceKey }),
+				timeoutMs: 200000,
+			});
+			if (result.success) {
+				setStarted(true);
+				setStartOutput(result.output);
+			} else {
+				setStartError(result.message + (result.output ? `\n${result.output}` : ""));
+			}
+		} catch (err) {
+			setStartError(String(err));
+		} finally {
+			setStarting(false);
+		}
+	}
 
 	return (
 		<div
@@ -98,6 +129,18 @@ export default function SetupPanel({
 			</ol>
 
 			<div className="flex flex-wrap gap-2 mt-5">
+				{setup.compose_file && !started && (
+					<button
+						type="button"
+						onClick={startContainer}
+						disabled={starting}
+						className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-green-700 hover:bg-green-600 text-white font-medium disabled:opacity-50 transition-colors"
+						data-testid={`start-container-${serviceKey}`}
+					>
+						{starting ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+						{starting ? "Starting… (first pull takes minutes)" : `Start ${setup.label} now`}
+					</button>
+				)}
 				<a
 					href={serviceUrl}
 					target="_blank"
@@ -113,6 +156,22 @@ export default function SetupPanel({
 					<Key size={12} /> Install & key guide <ArrowRight size={12} />
 				</Link>
 			</div>
+			{started && (
+				<p className="text-xs text-green-400 mt-3" data-testid={`started-ok-${serviceKey}`}>
+					Container started — open {setup.label} below, finish the first-run wizard if shown, then continue with step 2
+					(API key).
+				</p>
+			)}
+			{startOutput && (
+				<pre className="text-xs font-mono text-zinc-500 bg-zinc-950 border border-zinc-800 rounded-lg p-3 mt-3 overflow-x-auto whitespace-pre-wrap">
+					{startOutput}
+				</pre>
+			)}
+			{startError && (
+				<p className="text-xs text-red-400 mt-3 whitespace-pre-wrap" data-testid={`start-error-${serviceKey}`}>
+					{startError}
+				</p>
+			)}
 		</div>
 	);
 }

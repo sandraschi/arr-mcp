@@ -33,6 +33,46 @@ def repo_compose_file() -> str | None:
     return str(candidate) if candidate.is_file() else None
 
 
+def start_service_container(service: str) -> dict:
+    """Run ``docker compose up -d <service>`` server-side. Fail-soft.
+
+    The command is fully constructed here: ``service`` must be in
+    STARTABLE_SERVICES, the compose file must exist, and no shell is used.
+    Blocks up to 3 minutes (first pull is slow); callers run it in a thread.
+    Returns ``{"started": bool, "message": str, "output": str}``.
+    """
+    if service not in STARTABLE_SERVICES:
+        return {
+            "started": False,
+            "message": f"Unknown service '{service}'. Startable: {', '.join(STARTABLE_SERVICES)}.",
+            "output": "",
+        }
+    if shutil.which("docker") is None:
+        return {"started": False, "message": "Docker is not installed.", "output": ""}
+    compose_file = repo_compose_file()
+    if compose_file is None:
+        return {
+            "started": False,
+            "message": "No docker-compose.yml ships with this install.",
+            "output": "",
+        }
+    try:
+        proc = subprocess.run(
+            ["docker", "compose", "-f", compose_file, "up", "-d", service],
+            capture_output=True,
+            text=True,
+            timeout=180,
+            check=False,
+        )
+    except (OSError, subprocess.SubprocessError) as exc:
+        return {"started": False, "message": f"docker compose failed: {exc}", "output": ""}
+    output = ((proc.stdout or "") + (proc.stderr or "")).strip()
+    tail = "\n".join(output.splitlines()[-15:])
+    if proc.returncode != 0:
+        return {"started": False, "message": f"docker compose exited {proc.returncode}.", "output": tail}
+    return {"started": True, "message": f"{service} started.", "output": tail}
+
+
 # image substring → arr-mcp service key
 IMAGE_TO_SERVICE: dict[str, str] = {
     "radarr": "radarr",
@@ -113,6 +153,10 @@ SERVICE_SETUP: dict[str, dict] = {
         "key_location": "Bazarr UI → Settings → General → API Key",
     },
 }
+
+# services the webapp may start via POST /api/docker/start — allowlist only,
+# no user-supplied flags or names ever reach the command line.
+STARTABLE_SERVICES = tuple(SERVICE_SETUP)
 
 # sibling MCP servers for the fleet section (backend health + frontend links)
 FLEET_SIBLINGS: list[dict] = [

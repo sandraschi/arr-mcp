@@ -15,7 +15,13 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from arr_mcp.discovery import SERVICE_SETUP, detect_docker_containers, probe_fleet, repo_compose_file
+from arr_mcp.discovery import (
+    SERVICE_SETUP,
+    detect_docker_containers,
+    probe_fleet,
+    repo_compose_file,
+    start_service_container,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +43,12 @@ class ChatRequest(BaseModel):
     provider: str = Field(default="ollama")
     base_url: str | None = None
     model: str | None = None
+
+
+class DockerStartRequest(BaseModel):
+    service: str = Field(
+        description="Compose service to start (radarr, sonarr, lidarr, prowlarr, readarr, overseerr, bazarr)."
+    )
 
 
 class OrchestrateRequest(BaseModel):
@@ -640,6 +652,23 @@ def create_api_router(
 
         payload = await asyncio.to_thread(detect_docker_containers)
         return JSONResponse(content={"success": True, "data": payload})
+
+    @router.post("/docker/start")
+    async def api_docker_start(body: DockerStartRequest):
+        """Start one allowlisted compose service (radarr…bazarr) server-side.
+
+        The command is fully constructed by ``start_service_container`` — the
+        request carries only the service name, never flags or paths. First
+        pull can take minutes; the call blocks up to 3 minutes in a thread.
+        """
+        import asyncio
+
+        from arr_mcp.discovery import STARTABLE_SERVICES
+
+        if body.service not in STARTABLE_SERVICES:
+            raise HTTPException(400, f"Unknown service '{body.service}'. Startable: {', '.join(STARTABLE_SERVICES)}.")
+        result = await asyncio.to_thread(start_service_container, body.service)
+        return JSONResponse(content={"success": result["started"], **result})
 
     # ── fleet siblings (plex-mcp / jellyfin-mcp status + links) ───
 

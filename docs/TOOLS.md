@@ -44,7 +44,8 @@
 
 `health`, `status` (uptime, version, configured count), `capabilities`, `skills`,
 `diagnostics` (+ `/v1/diagnostics`), `docker` (detected Servarr containers,
-fail-soft), `fleet` (plex-mcp/jellyfin-mcp probes + dashboard links),
+fail-soft), `docker/start` (POST: start one allowlisted compose service,
+no terminal needed), `fleet` (plex-mcp/jellyfin-mcp probes + dashboard links),
 `logs`, `logs/stream` (SSE), per-service `*/summary` (`enabled:false` + setup
 guide when unconfigured), `orchestrator/summary`, `orchestrate/request` (POST,
 runs the shared request pipeline),
