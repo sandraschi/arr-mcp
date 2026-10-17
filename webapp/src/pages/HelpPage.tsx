@@ -3,6 +3,8 @@ import {
 	ArrowRight,
 	Book,
 	Box,
+	Check,
+	Copy,
 	ExternalLink,
 	HelpCircle,
 	Key,
@@ -11,7 +13,36 @@ import {
 	Terminal,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { textColor } from "../utils/colors";
+
+function CopyButton({ text }: { text: string }) {
+	const [copied, setCopied] = useState(false);
+	async function copy() {
+		try {
+			await navigator.clipboard.writeText(text);
+		} catch {
+			const ta = document.createElement("textarea");
+			ta.value = text;
+			document.body.appendChild(ta);
+			ta.select();
+			document.execCommand("copy");
+			document.body.removeChild(ta);
+		}
+		setCopied(true);
+		setTimeout(() => setCopied(false), 1500);
+	}
+	return (
+		<button
+			type="button"
+			onClick={copy}
+			title="Copy to clipboard"
+			className="shrink-0 text-zinc-500 hover:text-zinc-200 transition-colors"
+		>
+			{copied ? <Check size={12} className="text-green-400" /> : <Copy size={12} />}
+		</button>
+	);
+}
 
 interface ToolRef {
 	name: string;
@@ -29,7 +60,7 @@ const tools: ToolRef[] = [
 	},
 	{
 		name: "sonarr_series",
-		operations: "list, lookup, get, add, delete, update",
+		operations: "list, lookup, get, add, search, delete, update",
 		description: "Manage Sonarr TV series — browse library, search TVDB, add/remove series.",
 		color: "sonarr",
 	},
@@ -83,8 +114,32 @@ const tools: ToolRef[] = [
 	},
 	{
 		name: "readarr_books",
-		operations: "list, get, lookup, set_monitored",
+		operations: "list, get, lookup, search, set_monitored",
 		description: "Manage Readarr books — list by author, search, toggle monitoring.",
+		color: "readarr",
+	},
+	{
+		name: "readarr_add_book",
+		operations: "add one book by exact foreign ID (existing or new author)",
+		description: "Add exactly one book — duplicate-proof by foreign ID, dry-run safe.",
+		color: "readarr",
+	},
+	{
+		name: "readarr_delete_book",
+		operations: "preview (dry_run) or delete one book, author retained",
+		description: "Delete one book with preview-first safety; file deletes need confirmation.",
+		color: "readarr",
+	},
+	{
+		name: "readarr_delete_books",
+		operations: "preflight + sequential bulk delete (≤100), authors retained",
+		description: "Bulk delete with all-IDs-preflighted before the first mutation.",
+		color: "readarr",
+	},
+	{
+		name: "readarr_add_options",
+		operations: "root folders, quality/metadata profiles, tags for adds",
+		description: "Read-only discovery of the choices a new-author add needs.",
 		color: "readarr",
 	},
 	{
@@ -113,8 +168,8 @@ const tools: ToolRef[] = [
 	},
 	{
 		name: "arr_orchestrate",
-		operations: "request, status, check_jellyfin, queue",
-		description: "Cross-arr orchestration — request media with Jellyfin check + auto-routing.",
+		operations: "request, status, check_jellyfin, check_plex, check_emby, queue",
+		description: "Cross-arr orchestration — request media with library check + auto-routing.",
 		color: "zinc",
 	},
 	{
@@ -140,85 +195,163 @@ const tools: ToolRef[] = [
 interface ServiceGuide {
 	name: string;
 	port: number;
+	route: string;
 	description: string;
+	does: string;
 	apiKeyPath: string;
 	installSteps: string[];
+	afterInstall: string[];
+	gotcha: string;
+	tools: string[];
 }
 
 const serviceGuides: ServiceGuide[] = [
 	{
 		name: "Radarr",
 		port: 7878,
-		description: "Movie collection manager — automates movie downloads via Usenet/BitTorrent.",
+		route: "/radarr",
+		description:
+			"Movie collection manager — finds movies, sends them to your download client, imports and renames them.",
+		does: "Give it a movie and it handles search → download → import → rename, forever, for your whole library.",
 		apiKeyPath: "Settings → General → API Key",
 		installSteps: [
-			"Docker: docker run -d --name=radarr -p 7878:7878 -v /path/to/config:/config -v /path/to/movies:/movies lscr.io/linuxserver/radarr:latest",
-			"Windows: Download installer from https://radarr.video",
-			"Linux: Use your package manager or the install script from https://wiki.servarr.com/radarr/installation",
-			"First launch: open http://localhost:7878, configure media management, add a download client, add indexers via Prowlarr",
+			"Compose (recommended): docker compose up -d radarr — or the Dashboard's Start button",
+			"Standalone: docker run -d --name=radarr -p 7878:7878 -v /path/to/config:/config -v /path/to/movies:/movies lscr.io/linuxserver/radarr:latest",
+			"Native installer: https://radarr.video",
 		],
+		afterInstall: [
+			"Settings → Media Management: add a root folder (/movies on compose), turn on renaming so files land tidy.",
+			"Settings → Download Clients: add qBittorrent or SABnzbd — without one, nothing ever downloads.",
+			"Settings → Indexers: add via Prowlarr (recommended) so every *arr shares the same indexers.",
+			"Back here: Settings → Services → Radarr → paste URL + key → Test → Save.",
+		],
+		gotcha:
+			"“Added but never downloads” is always a missing download client or missing indexers — check System → Events first.",
+		tools: ["radarr_movies"],
 	},
 	{
 		name: "Sonarr",
 		port: 8989,
-		description: "TV series collection manager — automates episode downloads.",
+		route: "/sonarr",
+		description: "TV series manager — tracks episodes as they air and grabs them automatically.",
+		does: "Follow a show once; it monitors future episodes, upgrades quality when better releases appear, and organizes seasons.",
 		apiKeyPath: "Settings → General → API Key",
 		installSteps: [
-			"Docker: docker run -d --name=sonarr -p 8989:8989 -v /path/to/config:/config -v /path/to/tv:/tv lscr.io/linuxserver/sonarr:latest",
-			"Windows: Download installer from https://sonarr.tv",
-			"First launch: open http://localhost:8989, add root folder, connect Prowlarr for indexers",
+			"Compose (recommended): docker compose up -d sonarr — or the Dashboard's Start button",
+			"Standalone: docker run -d --name=sonarr -p 8989:8989 -v /path/to/config:/config -v /path/to/tv:/tv lscr.io/linuxserver/sonarr:latest",
+			"Native installer: https://sonarr.tv",
 		],
+		afterInstall: [
+			"Settings → Media Management: root folder (/tv on compose).",
+			"When adding a series choose monitoring wisely: Future (new episodes only) vs All (whole back-catalog).",
+			"Connect a download client and Prowlarr indexers, same as Radarr.",
+			"Back here: Settings → Services → Sonarr → paste URL + key → Test → Save.",
+		],
+		gotcha:
+			"A monitored episode on an unmonitored series never grabs — enable the series first, then the episode flag.",
+		tools: ["sonarr_series", "sonarr_episodes"],
 	},
 	{
 		name: "Lidarr",
 		port: 8686,
-		description: "Music collection manager — automates album downloads via Usenet/BitTorrent.",
+		route: "/lidarr",
+		description: "Music manager — builds your library artist by artist from MusicBrainz metadata.",
+		does: "Add an artist and it fetches their discography, matches metadata, and keeps tags and filenames consistent.",
 		apiKeyPath: "Settings → General → API Key",
 		installSteps: [
-			"Docker: docker run -d --name=lidarr -p 8686:8686 -v /path/to/config:/config -v /path/to/music:/music lscr.io/linuxserver/lidarr:latest",
-			"First launch: open http://localhost:8686, add root folder, connect to MusicBrainz, add download client",
+			"Compose (recommended): docker compose up -d lidarr — or the Dashboard's Start button",
+			"Standalone: docker run -d --name=lidarr -p 8686:8686 -v /path/to/config:/config -v /path/to/music:/music lscr.io/linuxserver/lidarr:latest",
 		],
+		afterInstall: [
+			"Settings → Media Management: root folder (/music), metadata profile (controls tags and naming).",
+			"Add artists by MusicBrainz ID (via lookup), not by typed name — names mismatch constantly.",
+			"Connect a download client and Prowlarr indexers.",
+			"Back here: Settings → Services → Lidarr → paste URL + key → Test → Save.",
+		],
+		gotcha:
+			"Compilations and Various Artists releases match poorly — per-album monitoring lets you tame the back-catalog.",
+		tools: ["lidarr_artists", "lidarr_albums"],
 	},
 	{
 		name: "Prowlarr",
 		port: 9696,
-		description: "Indexer manager — central hub for managing Usenet/Torrent indexers across the *arr stack.",
+		route: "/prowlarr",
+		description: "Indexer backbone — configure Usenet/torrent indexers once, share them with every *arr.",
+		does: "The single place indexers live. It pushes them out to Radarr/Sonarr/Lidarr/Readarr so you never configure the same indexer four times.",
 		apiKeyPath: "Settings → General → API Key",
 		installSteps: [
-			"Docker: docker run -d --name=prowlarr -p 9696:9696 -v /path/to/config:/config lscr.io/linuxserver/prowlarr:latest",
-			"First launch: open http://localhost:9696, add indexers, add Radarr/Sonarr/Lidarr as applications, sync",
+			"Compose (recommended): docker compose up -d prowlarr — or the Dashboard's Start button",
+			"Standalone: docker run -d --name=prowlarr -p 9696:9696 -v /path/to/config:/config lscr.io/linuxserver/prowlarr:latest",
 		],
+		afterInstall: [
+			"Indexers → Add your indexers (test each one — red means wrong credentials or URL).",
+			"Settings → Apps → add Radarr/Sonarr/Lidarr/Readarr (each needs its own API key), then Sync.",
+			'Whenever you edit indexers later: prowlarr_applications(operation="sync_all") — apps keep stale lists otherwise.',
+			"Back here: Settings → Services → Prowlarr → paste URL + key → Test → Save.",
+		],
+		gotcha: "Indexer edits do nothing until synced to the apps — sync_all is the step everyone forgets.",
+		tools: ["prowlarr_indexers", "prowlarr_search", "prowlarr_applications", "prowlarr_history"],
 	},
 	{
 		name: "Readarr",
 		port: 8787,
-		description: "Book collection manager — automates ebook/audiobook downloads.",
+		route: "/readarr",
+		description: "Book manager — ebooks and audiobooks, still pre-release upstream.",
+		does: "Tracks authors and grabs their books. Youngest of the family: expect rough edges, but the core add/monitor flow works.",
 		apiKeyPath: "Settings → General → API Key",
 		installSteps: [
-			"Docker: docker run -d --name=readarr -p 8787:8787 -v /path/to/config:/config -v /path/to/books:/books lscr.io/linuxserver/readarr:amd64-develop-0.4.18.2805-ls157",
-			"Note: Readarr is in active development — upstream retired the floating tags, so the compose stack pins the last good amd64 build. Book metadata comes from Goodreads/Google Books.",
+			"Compose (recommended): docker compose up -d readarr — or the Dashboard's Start button",
+			"Standalone: docker run -d --name=readarr -p 8787:8787 -v /path/to/config:/config -v /path/to/books:/books lscr.io/linuxserver/readarr:amd64-develop-0.4.18.2805-ls157",
 		],
+		afterInstall: [
+			"Settings → Media Management: root folder (/books). Metadata comes from Goodreads/Google Books.",
+			"New-author adds need quality profile + metadata profile + root folder — readarr_add_options() lists the legal choices.",
+			"Back here: Settings → Services → Readarr → paste URL + key → Test → Save.",
+		],
+		gotcha:
+			"Upstream retired the floating :develop tag — the stack pins amd64-develop-0.4.18.2805-ls157. Don't “upgrade” it to :develop.",
+		tools: ["readarr_authors", "readarr_books", "readarr_add_book", "readarr_delete_book", "readarr_add_options"],
 	},
 	{
 		name: "Overseerr",
 		port: 5055,
-		description: "Media request & discovery — user-friendly UI for requesting movies and TV shows.",
-		apiKeyPath: "Settings → General → API Key (or use the setup wizard)",
+		route: "/overseerr",
+		description: "Request portal — the family-friendly front door for “I want to watch…”",
+		does: "Household members browse and request movies/shows; you approve or decline. Approved requests flow into Radarr/Sonarr.",
+		apiKeyPath: "Settings → General → API Key (created by the setup wizard)",
 		installSteps: [
-			"Docker: docker run -d --name=overseerr -p 5055:5055 -v /path/to/config:/app/config sctx/overseerr:latest",
-			"First launch: open http://localhost:5055, configure Radarr + Sonarr connections, set up Plex/Jellyfin",
-			"Note: Overseerr API key is generated during setup. Find it in Settings → General.",
+			"Compose (recommended): docker compose up -d overseerr — or the Dashboard's Start button",
+			"Standalone: docker run -d --name=overseerr -p 5055:5055 -v /path/to/config:/app/config sctx/overseerr:latest",
 		],
+		afterInstall: [
+			"Open http://localhost:5055 and run the setup wizard: connect Radarr + Sonarr, then Plex/Jellyfin.",
+			"The API key is generated during setup — Settings → General.",
+			"Add users for each household member so requests carry identity.",
+			"Back here: Settings → Services → Overseerr → paste URL + key → Test → Save.",
+		],
+		gotcha:
+			"No key until the wizard runs. And request triage needs exact media IDs — overseerr_search first, never guess.",
+		tools: ["overseerr_requests", "overseerr_search", "overseerr_users"],
 	},
 	{
 		name: "Bazarr",
 		port: 6767,
-		description: "Subtitle manager — automatically downloads subtitles for movies and TV shows.",
+		route: "/bazarr",
+		description: "Subtitle manager — keeps every movie and episode subtitled without thinking about it.",
+		does: "Watches your Sonarr/Radarr libraries and downloads missing subtitles from your providers in your languages.",
 		apiKeyPath: "Settings → General → API Key",
 		installSteps: [
-			"Docker: docker run -d --name=bazarr -p 6767:6767 -v /path/to/config:/config -v /path/to/movies:/movies -v /path/to/tv:/tv lscr.io/linuxserver/bazarr:latest",
-			"First launch: open http://localhost:6767, connect Sonarr + Radarr, add subtitle providers (OpenSubtitles, etc.)",
+			"Compose (recommended): docker compose up -d bazarr — or the Dashboard's Start button",
+			"Standalone: docker run -d --name=bazarr -p 6767:6767 -v /path/to/config:/config -v /path/to/movies:/movies -v /path/to/tv:/tv lscr.io/linuxserver/bazarr:latest",
 		],
+		afterInstall: [
+			"Settings → Sonarr/Radarr: connect both (each needs its own API key — Bazarr reads their libraries).",
+			"Settings → Providers: add at least one (OpenSubtitles needs an account) and enable your languages.",
+			"Settings → Languages: enable the subtitle languages you actually watch.",
+			"Back here: Settings → Services → Bazarr → paste URL + key → Test → Save.",
+		],
+		gotcha: "Empty search results mean no providers configured — not missing subtitles. Check providers first, always.",
+		tools: ["bazarr_subtitles"],
 	},
 ];
 
@@ -240,10 +373,14 @@ export default function HelpPage() {
 					<h3 className="font-semibold text-sm">What is arr-mcp?</h3>
 				</div>
 				<p className="text-sm text-zinc-400 leading-relaxed">
-					arr-mcp is a FastMCP 3.4 server that wraps the complete *arr automation stack under a single MCP interface.
-					One server manages Radarr (Movies), Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books),
-					Overseerr (Requests), and Bazarr (Subtitles). Each service is independently optional and configurable via{" "}
-					<code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs">.env</code>.
+					arr-mcp is a FastMCP 3.4 server that puts the complete *arr automation stack under one roof: Radarr (Movies),
+					Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books), Overseerr (Requests), and Bazarr
+					(Subtitles). Each service is independently optional. Connect them in{" "}
+					<Link to="/settings" className="text-zinc-200 underline">
+						Settings → Services
+					</Link>{" "}
+					— paste URL + API key, Test, Save — no config files, no restart. (A{" "}
+					<code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs">.env</code> fallback exists for container setups.)
 				</p>
 			</section>
 
@@ -251,35 +388,37 @@ export default function HelpPage() {
 			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4" data-testid="help-quickstart">
 				<div className="flex items-center gap-2 mb-3">
 					<Terminal size={18} className="text-zinc-400" />
-					<h3 className="font-semibold text-sm">Quick Start</h3>
+					<h3 className="font-semibold text-sm">Quick Start — no terminal required</h3>
 				</div>
-				<div className="bg-zinc-800 rounded-lg p-3 text-xs font-mono text-zinc-400 space-y-1">
-					<div>
-						<span className="text-zinc-600"># 1. Clone and configure</span>
-					</div>
-					<div>git clone https://github.com/sandraschi/arr-mcp</div>
-					<div>cd arr-mcp</div>
-					<div>cp .env.example .env</div>
-					<div>
-						<span className="text-zinc-600"># 2. Edit .env with your *arr URLs and API keys (see below)</span>
-					</div>
-					<div>uv sync</div>
-					<div>uv run arr-mcp</div>
-					<div className="mt-2">
-						<span className="text-zinc-600"># 3. Start the webapp (separate terminal)</span>
-					</div>
-					<div>cd webapp</div>
-					<div>npm install</div>
-					<div>npm run dev</div>
-					<div className="mt-2">
-						<span className="text-zinc-600"># Or start everything with Docker Compose (see below)</span>
-					</div>
-					<div>docker compose up -d</div>
-					<div>
-						cp .env.example .env <span className="text-zinc-600"># then edit with localhost URLs</span>
-					</div>
-					<div>uv run arr-mcp</div>
-				</div>
+				<ol className="text-sm text-zinc-400 space-y-2 list-decimal list-inside ml-1 leading-relaxed">
+					<li>
+						<span className="text-zinc-200">Start the stack:</span> on the{" "}
+						<Link to="/" className="text-zinc-200 underline">
+							Dashboard
+						</Link>{" "}
+						press <span className="text-zinc-200">Start all missing</span> (or the Start button on any service page).
+						Containers pull and start by themselves.
+					</li>
+					<li>
+						<span className="text-zinc-200">Connect each service:</span>{" "}
+						<Link to="/settings" className="text-zinc-200 underline">
+							Settings → Services
+						</Link>{" "}
+						— paste its URL + API key (locations below), Test, Save. Cards turn green immediately.
+					</li>
+					<li>
+						<span className="text-zinc-200">Request something:</span> the{" "}
+						<Link to="/orchestrate" className="text-zinc-200 underline">
+							Orchestrate
+						</Link>{" "}
+						page runs the whole pipeline (library check → type detection → add).
+					</li>
+				</ol>
+				<p className="text-xs text-zinc-600 mt-3">
+					Prefer the terminal? Clone, <span className="font-mono">uv sync</span>,{" "}
+					<span className="font-mono">uv run arr-mcp --http</span>, webapp{" "}
+					<span className="font-mono">npm run dev</span> — same result, more typing.
+				</p>
 			</section>
 
 			{/* Docker Compose */}
@@ -289,9 +428,12 @@ export default function HelpPage() {
 					<h3 className="font-semibold text-sm">Docker Compose — Full *Arr Stack</h3>
 				</div>
 				<p className="text-sm text-zinc-400 mb-3">
-					The repo includes a <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs">docker-compose.yml</code> that
-					spins up all 8 services (Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr, Bazarr, Jellyfin) with proper
-					volume mounts.
+					The repo includes a <code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs">docker-compose.yml</code> with
+					the 7 *arr services plus Jellyfin and the arr-mcp backend (the webapp itself needs{" "}
+					<span className="font-mono">--profile webapp</span>). From the repo root,{" "}
+					<span className="font-mono">docker compose up -d</span> starts the stack; first pulls take a while and
+					registries throttle parallel pulls, so prefer the Dashboard's{" "}
+					<span className="text-zinc-200">Start all missing</span> button, which pulls sequentially.
 				</p>
 				<div className="bg-zinc-800 rounded-lg p-3 text-xs font-mono text-zinc-400 space-y-1">
 					<div>docker compose up -d</div>
@@ -315,7 +457,9 @@ export default function HelpPage() {
 					<h3 className="font-semibold text-sm">Per-Service Installation Guide</h3>
 				</div>
 				<p className="text-xs text-zinc-500 mb-3">
-					Click any service to expand its installation instructions and API key location.
+					Click a service for the full picture: what it does, how to install it, the three things that make it actually
+					work, where its API key lives, and the gotcha that bites everyone once. Compose commands run from the repo
+					root — or skip the terminal with the Dashboard's Start buttons.
 				</p>
 				<div className="space-y-2">
 					{serviceGuides.map((svc) => (
@@ -335,20 +479,50 @@ export default function HelpPage() {
 								/>
 							</button>
 							{expandedService === svc.name && (
-								<div className="px-3 pb-3 space-y-2 animate-slide-up">
-									<p className="text-xs text-zinc-400">{svc.description}</p>
+								<div className="px-3 pb-3 space-y-3 animate-slide-up">
+									<p className="text-xs text-zinc-300 leading-relaxed">{svc.does}</p>
 									<div>
-										<span className="text-xs text-zinc-500">Installation:</span>
-										<div className="bg-zinc-900 rounded-lg p-2 mt-1 text-xs font-mono text-zinc-400 space-y-1">
+										<span className="text-xs text-zinc-500">Install:</span>
+										<div className="bg-zinc-900 rounded-lg p-2 mt-1 text-xs font-mono text-zinc-400 space-y-1.5">
 											{svc.installSteps.map((step, i) => (
-												<div key={`step-${i}`}>{step}</div>
+												<div key={`step-${i}`} className="flex items-start justify-between gap-2">
+													<span>{step}</span>
+													<CopyButton text={step} />
+												</div>
 											))}
 										</div>
 									</div>
+									<div>
+										<span className="text-xs text-zinc-500">Make it actually work:</span>
+										<ol className="mt-1 space-y-1 text-xs text-zinc-400 list-decimal list-inside ml-1">
+											{svc.afterInstall.map((step, i) => (
+												<li key={`after-${i}`}>{step}</li>
+											))}
+										</ol>
+									</div>
+									<div className="flex items-start gap-2 text-xs bg-yellow-950/30 border border-yellow-900/40 rounded-lg p-2">
+										<span className="text-yellow-500 font-medium shrink-0">Gotcha:</span>
+										<span className="text-zinc-400">{svc.gotcha}</span>
+									</div>
 									<div className="flex items-center gap-2 text-xs">
 										<Key size={12} className="text-yellow-500" />
-										<span className="text-zinc-500">API Key location:</span>
+										<span className="text-zinc-500">API key:</span>
 										<code className="bg-zinc-900 px-1.5 py-0.5 rounded text-yellow-400">{svc.apiKeyPath}</code>
+									</div>
+									<div className="flex flex-wrap items-center gap-2 text-xs">
+										<Link
+											to={svc.route}
+											className="inline-flex items-center gap-1 text-zinc-300 hover:text-white bg-zinc-900 px-2 py-1 rounded transition-colors"
+										>
+											Open {svc.name} page <ArrowRight size={12} />
+										</Link>
+										<Link
+											to="/settings"
+											className="inline-flex items-center gap-1 text-zinc-400 hover:text-zinc-200 transition-colors"
+										>
+											Connect in Settings
+										</Link>
+										<span className="text-zinc-600 font-mono">tools: {svc.tools.join(", ")}</span>
 									</div>
 								</div>
 							)}
@@ -364,24 +538,28 @@ export default function HelpPage() {
 					<h3 className="font-semibold text-sm">How to Get API Keys</h3>
 				</div>
 				<p className="text-xs text-zinc-500 mb-2">
-					Every *arr service uses an API key for authentication. Here's the universal method:
+					Every *arr service uses an API key. The normal path needs no files:
 				</p>
 				<ol className="text-xs text-zinc-400 space-y-1 list-decimal list-inside ml-1">
 					<li>Open the service's web UI (e.g. http://localhost:7878 for Radarr)</li>
 					<li>
-						Go to <span className="text-zinc-300">Settings → General</span>
+						Go to <span className="text-zinc-300">Settings → General</span>, find the{" "}
+						<span className="text-zinc-300">API Key</span> field
 					</li>
 					<li>
-						Find the <span className="text-zinc-300">API Key</span> field
-					</li>
-					<li>
-						Copy the key and paste it into your <code className="bg-zinc-800 px-1 py-0.5 rounded">.env</code> file
-					</li>
-					<li>
-						Set <code className="bg-zinc-800 px-1 py-0.5 rounded">SERVICE_ENABLED=true</code> for each service you want
-						to use
+						Paste it into{" "}
+						<Link to="/settings" className="text-zinc-200 underline">
+							Settings → Services
+						</Link>{" "}
+						next to the service, Test, Save — live immediately
 					</li>
 				</ol>
+				<p className="text-xs text-zinc-600 mt-2">
+					Keys are stored in <span className="font-mono">config/arr-services.json</span> (gitignored) and never shown
+					back. The legacy path — <span className="font-mono">SERVICE_URL</span>/
+					<span className="font-mono">SERVICE_API_KEY</span>/<span className="font-mono">SERVICE_ENABLED</span> in{" "}
+					<span className="font-mono">.env</span> — still works.
+				</p>
 			</section>
 
 			{/* Tool Reference */}
@@ -490,6 +668,30 @@ export default function HelpPage() {
 						className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors"
 					>
 						<ExternalLink size={14} /> Overseerr
+					</a>
+					<a
+						href="https://lidarr.audio"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors"
+					>
+						<ExternalLink size={14} /> Lidarr
+					</a>
+					<a
+						href="https://readarr.com"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors"
+					>
+						<ExternalLink size={14} /> Readarr
+					</a>
+					<a
+						href="https://www.bazarr.media"
+						target="_blank"
+						rel="noopener noreferrer"
+						className="flex items-center gap-2 text-zinc-400 hover:text-zinc-200 transition-colors"
+					>
+						<ExternalLink size={14} /> Bazarr
 					</a>
 				</div>
 			</section>
