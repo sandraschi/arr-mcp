@@ -62,8 +62,10 @@ services:
     restart: unless-stopped
 
   # ── Readarr (Books) ──
+  # NOTE: upstream retired the floating tags (multi-arch :develop and even
+  # :amd64-develop have empty manifests), so pin the last good amd64 build.
   readarr:
-    image: lscr.io/linuxserver/readarr:develop
+    image: lscr.io/linuxserver/readarr:amd64-develop-0.4.18.2805-ls157
     container_name: readarr
     environment:
       - PUID=1000

@@ -195,8 +195,8 @@ const serviceGuides: ServiceGuide[] = [
 		description: "Book collection manager — automates ebook/audiobook downloads.",
 		apiKeyPath: "Settings → General → API Key",
 		installSteps: [
-			"Docker: docker run -d --name=readarr -p 8787:8787 -v /path/to/config:/config -v /path/to/books:/books lscr.io/linuxserver/readarr:develop",
-			"Note: Readarr is in active development — use the :develop tag. Book metadata comes from Goodreads/Google Books.",
+			"Docker: docker run -d --name=readarr -p 8787:8787 -v /path/to/config:/config -v /path/to/books:/books lscr.io/linuxserver/readarr:amd64-develop-0.4.18.2805-ls157",
+			"Note: Readarr is in active development — upstream retired the floating tags, so the compose stack pins the last good amd64 build. Book metadata comes from Goodreads/Google Books.",
 		],
 	},
 	{

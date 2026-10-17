@@ -130,7 +130,7 @@ SERVICE_SETUP: dict[str, dict] = {
         "subtitle": "Books",
         "default_port": 8787,
         "compose_service": "readarr",
-        "image": "lscr.io/linuxserver/readarr:develop",
+        "image": "lscr.io/linuxserver/readarr:amd64-develop-0.4.18.2805-ls157",
         "env_keys": ["READARR_URL", "READARR_API_KEY", "READARR_ENABLED"],
         "key_location": "Readarr UI → Settings → General → API Key",
     },

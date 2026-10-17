@@ -10,10 +10,10 @@ Page: `/readarr`.
 
 ```bash
 docker compose up -d readarr
-# …or standalone (develop tag — Readarr is pre-release)
+# …or standalone (pinned build — upstream retired the floating tags)
 docker run -d --name=readarr -p 8787:8787 \
   -v /path/to/config:/config -v /path/to/books:/books \
-  lscr.io/linuxserver/readarr:develop
+  lscr.io/linuxserver/readarr:amd64-develop-0.4.18.2805-ls157
 ```
 
 First launch opens http://localhost:8787 — metadata comes from
