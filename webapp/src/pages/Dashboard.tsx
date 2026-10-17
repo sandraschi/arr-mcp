@@ -6,7 +6,9 @@ import {
 	Container,
 	Film,
 	ListVideo,
+	Loader2,
 	Music,
+	Play,
 	Search,
 	Send,
 	Subtitles,
@@ -82,6 +84,48 @@ export default function Dashboard() {
 	const [orch, setOrch] = useState<OrchestratorSummary | null>(null);
 	const [fleet, setFleet] = useState<FleetSibling[] | null>(null);
 	const [docker, setDocker] = useState<DockerState | null>(null);
+	const [startingAll, setStartingAll] = useState(false);
+	const [startAllStatus, setStartAllStatus] = useState("");
+
+	async function refreshDocker() {
+		try {
+			const d = await apiFetch<{ success: boolean; data: DockerState }>("/api/docker");
+			setDocker(d.data);
+		} catch {
+			setDocker(null);
+		}
+	}
+
+	async function startAllMissing() {
+		if (startingAll) return;
+		const running = new Set((docker?.containers ?? []).map((c) => c.service));
+		const missing = services.map((s) => s.key).filter((k) => !running.has(k));
+		if (missing.length === 0) return;
+		setStartingAll(true);
+		setStartAllStatus("");
+		try {
+			for (const service of missing) {
+				setStartAllStatus(`Starting ${service}… (${missing.indexOf(service) + 1}/${missing.length})`);
+				const result = await apiFetch<{ success: boolean; message: string }>("/api/docker/start", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({ service }),
+					timeoutMs: 200000,
+				});
+				if (!result.success) {
+					setStartAllStatus(`Stopped: ${service}: ${result.message}`);
+					break;
+				}
+				await refreshDocker();
+			}
+			setStartAllStatus((s) => (s.startsWith("Stopped") ? s : "All containers started — grab API keys next."));
+		} catch (err) {
+			setStartAllStatus(`Stopped: ${String(err)}`);
+		} finally {
+			setStartingAll(false);
+			await refreshDocker();
+		}
+	}
 
 	useEffect(() => {
 		let mounted = true;
@@ -317,13 +361,37 @@ export default function Dashboard() {
 				</div>
 			)}
 
-			{docker?.available && docker.containers.length > 0 && (
+			{docker?.available && (
 				<div className="mt-8" data-testid="dashboard-docker">
-					<h3 className="text-lg font-semibold mb-1">Detected containers</h3>
+					<div className="flex items-center justify-between mb-1">
+						<h3 className="text-lg font-semibold">Detected containers</h3>
+						{services.some((s) => !(docker.containers ?? []).some((c) => c.service === s.key)) && (
+							<button
+								type="button"
+								onClick={startAllMissing}
+								disabled={startingAll}
+								className="flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-lg bg-green-700 hover:bg-green-600 text-white font-medium disabled:opacity-50 transition-colors"
+								data-testid="start-all-containers"
+							>
+								{startingAll ? <Loader2 size={12} className="animate-spin" /> : <Play size={12} />}
+								{startingAll ? "Starting…" : "Start all missing"}
+							</button>
+						)}
+					</div>
 					<p className="text-xs text-zinc-500 mb-4">
 						Found via <span className="font-mono">docker ps</span> — a running container still needs its API key in{" "}
 						<span className="font-mono">.env</span> before its card turns green.
 					</p>
+					{startAllStatus && (
+						<p className="text-xs text-zinc-400 mb-4" data-testid="start-all-status">
+							{startAllStatus}
+						</p>
+					)}
+					{docker.containers.length === 0 && (
+						<p className="text-xs text-zinc-600 mb-4">
+							No stack containers running yet — Start all missing pulls and starts all seven.
+						</p>
+					)}
 					<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
 						{docker.containers.map((c) => (
 							<div key={c.name} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 flex items-center gap-3">
