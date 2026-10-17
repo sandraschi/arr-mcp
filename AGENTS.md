@@ -1,6 +1,6 @@
 # arr-mcp Agent Context
 
-arr-mcp is a unified FastMCP 3.3+ server for the *arr automation stack (Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr, Bazarr) with cross-arr orchestration and Jellyfin bridge.
+arr-mcp is a unified FastMCP >=3.4.4,<4 server for the *arr automation stack (Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr, Bazarr) with cross-arr orchestration and Jellyfin bridge.
 
 ## Architecture
 
@@ -17,7 +17,7 @@ Each service is independently optional. Disabled services skip tool registration
 - **`sampling_handler_behavior="fallback"`** — set on FastMCP instance
 - **Resources**: `arr://config`, `arr://quickstart`, `arr://help`, `arr://capabilities`
 - **Prompts**: `orchestrate_media`, `stack_health_check`
-- **Prefab-UI**: `from prefab_ui.components import Card, Badge, Metric, Row` (>=0.18.0)
+- **Prefab-UI**: `from prefab_ui.components import Card, CardHeader, CardTitle, CardContent, Badge, Metric, Row` (>=0.19.0); card tools use `@mcp.tool(app=True)`
 
 ## Key Tools
 
@@ -44,7 +44,7 @@ Tools are registered **imperatively** via `register_*_tools(mcp, client)` functi
 
 ## Testing
 
-- **143 tests** in `tests/` — pytest + pytest-httpx for HTTP mocking
+- **289 tests** in `tests/` — pytest + pytest-httpx for HTTP mocking
 - All service clients mocked with `tests/mock_clients.py`
 - Ruff lint + mypy typecheck pre-commit hooks
 - `uv run pytest tests/ -q` — run full suite

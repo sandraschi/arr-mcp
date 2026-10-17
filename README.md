@@ -4,13 +4,13 @@
   <a href="https://github.com/sandraschi/arr-mcp"><img src="https://img.shields.io/github/stars/sandraschi/arr-mcp?style=flat-square" alt="Stars"></a>
   <a href="https://github.com/sandraschi/arr-mcp/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue?style=flat-square" alt="License"></a>
   <a href="https://python.org"><img src="https://img.shields.io/badge/Python-3.12+-3776AB?style=flat-square&logo=python&logoColor=white" alt="Python"></a>
-  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.3-7c5cfc?style=flat-square" alt="FastMCP"></a>
+  <a href="https://github.com/PrefectHQ/fastmcp"><img src="https://img.shields.io/badge/FastMCP-3.4-7c5cfc?style=flat-square" alt="FastMCP"></a>
   <a href=""><img src="https://img.shields.io/badge/stack-*arr-00ADD8?style=flat-square" alt="*arr Stack"></a>
-  <a href=""><img src="https://img.shields.io/badge/tests-143-success?style=flat-square" alt="Tests"></a>
+  <a href=""><img src="https://img.shields.io/badge/tests-289-success?style=flat-square" alt="Tests"></a>
   <a href=""><img src="https://img.shields.io/badge/fleet-SOTA-6366f1?style=flat-square" alt="Fleet SOTA"></a>
 </p>
 
-FastMCP 3.3 MCP server for the complete *arr automation stack — Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr, and Bazarr — under a single MCP interface.
+FastMCP 3.4 MCP server for the complete *arr automation stack — Radarr, Sonarr, Lidarr, Prowlarr, Readarr, Overseerr, and Bazarr — under a single MCP interface.
 
 New here? Start at [`docs/ONBOARDING.md`](docs/ONBOARDING.md) (10-minute setup, no account needed).
 
@@ -32,9 +32,9 @@ Other MCP clients (Cursor, Windsurf, opencode):
 ## Features
 
 - **7 services, 1 MCP server** — Radarr (Movies), Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books), Overseerr (Requests), Bazarr (Subtitles)
-- **28 MCP tools** — 19 portmanteau tools + 6 single-purpose tools + 3 Prefab card tools, 109 operations
+- **31 MCP tools** — portmanteau tools + single-purpose tools + 3 Prefab card tools
 - **Cross-arr orchestration** — request a title, auto-routes to correct arr with Jellyfin availability check
-- **Prefab-UI cards** — `arr_health_card`, `arr_calendar_card`, `arr_stats_card` — rich interactive cards in Claude Desktop, Cursor
+- **Prefab-UI cards** — `arr_health_card`, `arr_calendar_card`, `arr_stats_card` (`@mcp.tool(app=True)`) — rich interactive cards in Claude Desktop, Cursor
 - **Prowlarr indexer backbone** — unified search across all indexers
 - **Auto-discovery** — probes default ports for running *arr services; no `.env` needed for standard setups
 - **Optional services** — each arr independently configurable via `.env`, disabled services don't register tools
@@ -47,7 +47,7 @@ Other MCP clients (Cursor, Windsurf, opencode):
 - **Real-time logs** — SSE stream endpoint `/api/logs/stream` for live log viewing
 - **Browser notifications** — desktop alerts for download completions / request approvals
 - **Tauri 2.0 native** — single `.exe` installer bundling Python backend via PyInstaller
-- **CI/CD** — GitHub Actions (ruff + pytest + biome + tsc), 143 tests, Playwright e2e smoke tests
+- **CI/CD** — GitHub Actions (ruff + pytest + biome + tsc), 289 tests, Playwright e2e smoke tests
 
 ## Quick Start
 
@@ -113,9 +113,9 @@ npm run dev        # → http://localhost:10939
 
 ```
 arr-mcp/
-├── src/arr_mcp/             # Python backend (FastMCP 3.3)
+├── src/arr_mcp/             # Python backend (FastMCP 3.4)
 │   ├── services/            # 8 arr clients (BaseArrClient + 7 arrs)
-│   ├── tools/               # 28 MCP tools (19 portmanteau + 6 single-purpose + 3 prefab cards)
+│   ├── tools/               # 31 MCP tools (portmanteau + single-purpose + prefab cards)
 │   ├── prefabs.py           # Prefab-UI card builders (health, calendar, stats, orchestrate)
 │   ├── utils/               # Jellyfin bridge
 │   ├── api.py               # REST router with /api/{service}/summary
@@ -134,7 +134,7 @@ arr-mcp/
 │   ├── capabilities/        # Tauri 2.0 permission model
 │   ├── icons/               # App icons
 │   └── build-sidecar.ps1    # PyInstaller → binaries/
-├── tests/                   # pytest + pytest-httpx (143 tests)
+├── tests/                   # pytest + pytest-httpx (289 tests)
 ├── docker-compose.yml       # Full *arr stack (8 services)
 ├── .github/workflows/ci.yml # GitHub Actions (ruff + pytest + biome + tsc)
 ├── justfile                 # Fleet-standard recipes
@@ -150,7 +150,7 @@ just start         # run MCP server
 just webapp        # start React dev server
 just lint          # ruff check
 just typecheck     # mypy
-just test          # pytest with coverage (143 tests)
+just test          # pytest with coverage (289 tests)
 just e2e           # Playwright e2e (starts backend + webapp)
 just ci            # lint + typecheck + test + webapp build
 just tauri-build   # full native installer

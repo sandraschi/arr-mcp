@@ -1,4 +1,22 @@
 
+## [Unreleased] — 2026-10-17
+
+### Fixed (assfix cold re-audit)
+- Tool docstrings: `readarr_add_book`, `readarr_delete_book`, `readarr_delete_books`,
+  `readarr_add_options` now carry `## Return Format` + `## Examples` (all 31 tools covered).
+- Prefab cards rebuilt for prefab-ui 0.19 API (`CardHeader`/`CardTitle`/`CardContent`;
+  old `title=`/`badges=` kwargs never existed on 0.19 `Card` and failed mypy);
+  card tools now use `@mcp.tool(app=True)` and return `Card`.
+- `arr_agentic` sampling migrated to FastMCP 3.4 (`system_prompt=` + string messages,
+  `SamplingResult.text`; old dict-message shape was rejected by 3.4.5 types).
+- `app.py` resource typing: explicit service-config union (mypy clean).
+- justfile `webapp:` recipe uses `powershell.exe -NoProfile -File` with absolute path.
+- Session injection: added `.claude-plugin/plugin.json` + `hooks/hooks.json`
+  (Claude Code SessionStart) and `.github/copilot-instructions.md`.
+- CLAUDE.md refreshed (FastMCP >=3.4.4, ports, entry points, key files).
+- README counts corrected (31 tools, 289 tests, FastMCP 3.4).
+- `ruff format` clean (5 files), `mypy` clean (15 → 0 errors).
+
 ## [Unreleased] — 2026-10-09
 
 ### Fixed (assfix)

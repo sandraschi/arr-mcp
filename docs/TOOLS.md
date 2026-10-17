@@ -1,7 +1,7 @@
 # Tools — arr-mcp
 
-25 MCP tools (22 portmanteau + 3 Prefab cards). Full live reference: `arr_help`
-in-session, `arr://help` resource, `GET /api/skills`.
+31 MCP tools (portmanteau + single-purpose + 3 Prefab cards). Full live reference:
+`arr_help` in-session, `arr://help` resource, `GET /api/skills`.
 
 ## Per-service (registered only when the service is configured)
 
@@ -14,6 +14,10 @@ in-session, `arr://help` resource, `GET /api/skills`.
 | `lidarr_albums` | list, get, lookup, set_monitored |
 | `readarr_authors` | list, lookup, get, add, delete, update |
 | `readarr_books` | list, get, lookup, set_monitored |
+| `readarr_add_book` | add one book by exact foreign ID (existing or new author) |
+| `readarr_delete_book` | preview (dry_run) or delete one book, author retained |
+| `readarr_delete_books` | preflight + sequential bulk delete (≤100), authors retained |
+| `readarr_add_options` | list root folders, quality/metadata profiles, tags for adds |
 | `prowlarr_indexers` | list, get, add, update, delete, test, test_all, schema |
 | `prowlarr_search` | query |
 | `prowlarr_applications` | list, get, add, update, delete, sync |
