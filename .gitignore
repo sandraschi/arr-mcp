@@ -34,6 +34,10 @@ htmlcov/
 # Env
 .env
 
+# Docker compose runtime data (service configs, media, downloads)
+config/
+data/
+
 # Node
 webapp/node_modules/
 webapp/dist/
