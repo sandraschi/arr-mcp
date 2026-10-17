@@ -15,7 +15,9 @@ test.describe("Dashboard", () => {
 	});
 
 	test("shows stack reachability summary", async ({ page }) => {
-		await expect(page.getByText(/\d+\/7 reachable/)).toBeVisible({ timeout: 15_000 });
+		const kpi = page.getByTestId("kpi-reachable");
+		await expect(kpi).toBeVisible({ timeout: 15_000 });
+		await expect(kpi).toContainText("/7");
 	});
 
 	test("renders health JSON panel", async ({ page }) => {

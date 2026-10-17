@@ -17,13 +17,21 @@ test.describe("Settings page", () => {
 		await page.goto("/settings");
 		await expect(page.getByRole("heading", { name: "Settings" })).toBeVisible();
 		await page.getByRole("button", { name: "Check" }).click();
-		await expect(page.getByText(/Connected|not configured|Unreachable/)).toBeVisible({ timeout: 15_000 });
+		await expect(page.getByTestId("backend-health-result")).toBeVisible({ timeout: 15_000 });
 	});
 
 	test("shows arr port reference", async ({ page }) => {
 		await page.goto("/settings");
 		await expect(page.getByText(":7878")).toBeVisible();
 		await expect(page.getByText(":8989")).toBeVisible();
+	});
+
+	test("shows services manager with all seven services", async ({ page }) => {
+		await page.goto("/settings");
+		await expect(page.getByTestId("services-section")).toBeVisible();
+		for (const svc of ["radarr", "sonarr", "lidarr", "prowlarr", "readarr", "overseerr", "bazarr"]) {
+			await expect(page.getByTestId(`service-row-${svc}`)).toBeVisible();
+		}
 	});
 });
 

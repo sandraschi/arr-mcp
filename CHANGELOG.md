@@ -1,4 +1,19 @@
 
+## [Unreleased] — 2026-10-17 (no-more-env)
+
+### Added
+- Settings → Services: manage all 7 service URLs + API keys in the webapp
+  (Test, Save, env-fallback reset). Overrides persist in
+  `config/arr-services.json` (gitignored); file beats env beats auto-discovery.
+  Keys are masked on read, never shown back.
+- LiveClient proxies: tools resolve the current client per call, so saved
+  credentials take effect instantly across REST, dashboard, orchestrator, and
+  MCP tools — no backend restart. Removed services degrade to structured
+  "not configured" failures instead of vanishing.
+- REST: `GET /api/config/services`, `POST /api/config/test`,
+  `POST /api/config/services`, `DELETE /api/config/services/{service}`.
+- Setup panels now point at Settings → Services instead of `.env` editing.
+
 ## [Unreleased] — 2026-10-17 (functional pass)
 
 ### Fixed (chat was crashing)

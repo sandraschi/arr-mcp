@@ -1,5 +1,6 @@
-import { CheckCircle, Cpu, Key, RefreshCw, Save, Server, Settings, Wifi, XCircle } from "lucide-react";
+import { CheckCircle, Cpu, RefreshCw, Save, Server, Settings, Wifi, XCircle } from "lucide-react";
 import { useState } from "react";
+import ServicesSection from "../components/ServicesSection";
 import { type HealthResult, fetchHealth } from "../utils/api";
 import { type LLMConfig, loadLLMConfig, saveLLMConfig } from "../utils/llm";
 
@@ -60,6 +61,7 @@ export default function SettingsPage() {
 				</div>
 				{health && (
 					<div
+						data-testid="backend-health-result"
 						className={`flex items-center gap-2 text-sm p-3 rounded-lg ${
 							health.reachable ? "bg-green-900/20 text-green-400" : "bg-red-900/20 text-red-400"
 						}`}
@@ -127,6 +129,8 @@ export default function SettingsPage() {
 				</button>
 			</section>
 
+			<ServicesSection />
+
 			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4">
 				<div className="flex items-center gap-2 mb-4">
 					<Wifi size={18} className="text-zinc-400" />
@@ -145,10 +149,11 @@ export default function SettingsPage() {
 
 			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5">
 				<div className="flex items-center gap-2 mb-4">
-					<Key size={18} className="text-zinc-400" />
-					<h3 className="font-semibold text-sm">API Keys</h3>
+					<Wifi size={18} className="text-zinc-400" />
+					<h3 className="font-semibold text-sm">Legacy: .env keys</h3>
+					<span className="text-xs text-zinc-600">(only needed for container/compose setups)</span>
 				</div>
-				<p className="text-xs text-zinc-500 mb-2">Configure API keys via environment variables or the .env file:</p>
+				<p className="text-xs text-zinc-500 mb-2">The Services section above is the normal path. These remain valid:</p>
 				<div className="bg-zinc-800 rounded-lg p-3 text-xs font-mono text-zinc-400 overflow-x-auto">
 					<pre>{`RADARR_API_KEY=your-key
 SONARR_API_KEY=your-key

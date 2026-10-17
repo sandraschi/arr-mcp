@@ -50,7 +50,8 @@ no terminal needed), `fleet` (plex-mcp/jellyfin-mcp probes + dashboard links),
 guide when unconfigured), `orchestrator/summary`, `orchestrate/request` (POST,
 runs the shared request pipeline),
 `llm/discover|providers|models|onboarding`, `llm/chat` (POST proxy), `chat` (POST,
-skill-first), `shutdown` (POST, orderly exit).
+skill-first), `config/services` (GET list masked, POST save+live-reload, DELETE
+env fallback), `config/test` (POST probe without saving), `shutdown` (POST, orderly exit).
 
 ## Resources / prompts
 

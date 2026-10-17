@@ -51,9 +51,11 @@ human summary, `data` for payloads.
 
 ## Troubleshooting
 
-- Tool missing from the session (e.g. no `radarr_movies`)? That service is not
-  configured — `arr_health()` shows `not configured`. Add `*_URL` + `*_API_KEY` +
-  `*_ENABLED=true` to `.env` and restart.
+- Tool answers "not configured" (e.g. `radarr_movies` on a fresh box)? That
+  service has no credentials — `arr_health()` shows the reason. Fix in the
+  webapp: Settings → Services, paste URL + key, Test, Save (live instantly,
+  no restart). `.env` (`*_URL` + `*_API_KEY` + `*_ENABLED=true`) still works
+  as fallback.
 - Placeholder keys (`your-*-api-key-here` from `.env.example`) count as
   unconfigured; media-server checks skip them instead of erroring (issue #1).
 - Deletes report success with empty `data` — Servarr returns 200 with an empty

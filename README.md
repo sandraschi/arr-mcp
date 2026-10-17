@@ -36,8 +36,8 @@ Other MCP clients (Cursor, Windsurf, opencode):
 - **Cross-arr orchestration** — request a title, auto-routes to correct arr with Jellyfin availability check
 - **Prefab-UI cards** — `arr_health_card`, `arr_calendar_card`, `arr_stats_card` (`@mcp.tool(app=True)`) — rich interactive cards in Claude Desktop, Cursor
 - **Prowlarr indexer backbone** — unified search across all indexers
-- **Auto-discovery** — probes default ports for running *arr services; no `.env` needed for standard setups
-- **Optional services** — each arr independently configurable via `.env`, disabled services don't register tools
+- **Auto-discovery** — probes default ports for running *arr services; no config needed for standard setups
+- **Settings → Services** — paste URL + API key per service in the webapp, Test, Save: live immediately, no `.env`, no restart (`.env` still works as fallback)
 - **FastMCP 3.3 resources** — `arr://config`, `arr://quickstart`, `arr://help`, `arr://capabilities` for agent self-discovery
 - **LLM sampling** — `arr_agentic` tool with Context injection for LLM-powered cross-arr workflows
 - **React dashboard** — 15-page webapp with health monitoring, LLM chat, MCP Inspector, live SSE log streaming
@@ -56,9 +56,9 @@ Other MCP clients (Cursor, Windsurf, opencode):
 git clone https://github.com/sandraschi/arr-mcp
 cd arr-mcp
 
-# 2. Create config (optional — auto-discovery probes default ports)
+# 2. Create config (optional — auto-discovery probes default ports,
+#    or use Settings → Services in the webapp later; no file editing needed)
 cp .env.example .env
-# Edit .env — add your *arr URLs and API keys
 
 # 3. Run
 uv sync

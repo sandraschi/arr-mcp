@@ -8,7 +8,7 @@ arr-mcp is a unified FastMCP >=3.4.4,<4 server for the *arr automation stack (Ra
 server.py → create_mcp() → register_*_tools(mcp, client) → run_server()
 ```
 
-Each service is independently optional. Disabled services skip tool registration entirely. Config via `.env` — see `.env.example`.
+Each service is independently optional. Tools are always registered and resolve the live client per call — unconfigured services answer with structured failures. Config via Settings → Services UI (`config/arr-services.json`, wins) or `.env` — see `.env.example`.
 
 ## FastMCP 3.3+ Patterns
 

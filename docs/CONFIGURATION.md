@@ -1,7 +1,11 @@
 # Configuration — arr-mcp
 
-All configuration is via environment variables (`.env` at repo root) loaded by
-`ArrConfig.load_config()` (`src/arr_mcp/config.py`). Copy `.env.example` to `.env` first.
+Two paths, same result. **Settings → Services** in the webapp is the normal
+one: paste URL + API key, Test, Save — live immediately, no restart, stored in
+`config/arr-services.json` (gitignored). Environment variables (`.env` at repo
+root, loaded by `ArrConfig.load_config()`) remain as fallback/override for
+containers: copy `.env.example` to `.env` if you prefer files. Precedence:
+**Services file > environment > auto-discovery** (key + open default port).
 
 ## *arr services (each: URL + API key + enabled flag)
 
