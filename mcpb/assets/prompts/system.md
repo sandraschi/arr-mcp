@@ -200,3 +200,243 @@ Each *arr service is configured independently via environment variables. Service
 ## Error Handling
 
 All tools return structured dicts with `{"success": bool, "message": str, "data": ...}` pattern. Service-specific errors include descriptive messages. When a service is not configured, tools are simply not registered — no error is raised. Timeouts and network failures return structured error messages with the exception detail. The `arr_agentic` tool falls back gracefully when sampling is unavailable.
+
+## Readarr Book Mutations: readarr_add_book / readarr_delete_book / readarr_delete_books / readarr_add_options
+
+Readarr's API exposes books but no safe single-call add/delete path, so arr-mcp
+ships four dedicated tools with exact-ID semantics and dry-run-first deletion.
+
+**readarr_add_book** — add exactly one book using an exact lookup edition.
+Either pass `author_id` (reuse that author's configuration) or the complete
+new-author set (`foreign_author_id`, `quality_profile_id`, `metadata_profile_id`,
+`root_folder_path`). New-author monitoring maps to Readarr's author add options:
+`monitor` is one of specific_book, all, future, missing, existing, first, latest,
+none (default specific_book); `monitor_new_books` is all, none, or new (default
+none). `tags` accepts existing Readarr tag IDs only. The legacy aliases
+`monitored` (bool) and `search_for_new_book` (bool) are retained for older callers;
+new callers use `monitor`/`monitor_new_books`. Set `search_for_new_book=true` to
+trigger Readarr's native download search immediately after adding. Duplicate
+protection: if a book with the same `foreign_book_id` already exists, the tool
+refuses with the existing record instead of creating a duplicate. A matching
+release may download under the author's quality profile; adding never enables
+searching the author's other books.
+
+**readarr_delete_book** — preview (default `dry_run=true`) or delete one book;
+the author is always retained. `delete_files=true` additionally requires
+`confirm_delete_files=true`, otherwise the tool refuses even outside dry-run
+mode. `add_import_list_exclusion=true` adds an import-list exclusion so the book
+is not re-grabbed. Returns the preview (book record plus file list) in both
+modes so callers can show what would happen before committing.
+
+**readarr_delete_books** — bulk variant for up to 100 unique IDs per call
+(duplicates removed). Every ID is preflighted before the first mutation; any
+preflight failure aborts the whole batch with zero deletions. A mid-sequence
+delete failure stops the run and reports `deleted`, `failed`, and
+`not_attempted` so the caller knows exactly where it stopped. Same
+`dry_run`/`delete_files`/`confirm_delete_files`/`add_import_list_exclusion`
+contract as the single variant. Authors are never deleted by either tool.
+
+**readarr_add_options** — read-only discovery of the choices `readarr_add_book`
+needs for a new author: root folders (id, name, path, freeSpace, default
+quality/metadata profile IDs, default tags — Calibre connection settings are
+stripped, only UI choices are returned), quality profiles, metadata profiles,
+existing tags, plus the legal `monitor_modes` and `monitor_new_books_modes`
+lists. Call this before any new-author add instead of guessing IDs.
+
+## Sonarr Episodes: sonarr_episodes
+
+**Operations:** `list`, `get`, `search`, `set_monitored`. `list` requires
+`series_id` with optional `season_number` filter. `get` requires `episode_id`.
+`search` requires `episode_id` or `series_id` and triggers Sonarr's native
+search for missing episodes. `set_monitored` requires `episode_id` plus
+`monitored` bool. Episode monitoring composes with series monitoring: an
+unmonitored series ignores episode-level flags, so check the series record
+first when a monitored episode never grabs.
+
+## Lidarr Albums: lidarr_albums
+
+**Operations:** `list`, `get`, `lookup`, `set_monitored`. `list` requires
+`artist_id`. `lookup` takes a `term` string against MusicBrainz. New artists are
+added via `lidarr_artists` with a MusicBrainz `foreign_artist_id`; albums
+inherit the artist's quality profile and root folder. `set_monitored` toggles
+per-album monitoring for back-catalog control.
+
+## Prowlarr Detail: applications, history, indexer ops
+
+**prowlarr_applications operations:** `list`, `get`, `sync`, `sync_all`, `test`.
+`sync` pushes the indexer list to one connected *arr app by `app_id`;
+`sync_all` fans out to every connected app after indexer changes — call it after
+any `prowlarr_indexers` add/update/delete or the apps keep stale indexer lists.
+
+**prowlarr_history operations:** `list`, `since`, `by_indexer`. `since` takes an
+ISO datetime and returns grabs/failures after that point; `by_indexer` groups
+activity per indexer for spotting dead or failing indexers. Pair with
+`prowlarr_indexers(operation="test_all")` for a full indexer health pass.
+
+**prowlarr_indexers full ops:** `list`, `get`, `add`, `update`, `delete`,
+`test`, `test_all`, `schema`. `schema` returns the config-contract fields for
+an indexer implementation (needed before `add` with a new `config_contract`
+such as NewznabSettings). `test` validates one indexer by ID without changing
+anything.
+
+## Overseerr Detail: search and users
+
+**overseerr_search operation:** `search` — free-text search across Overseerr's
+movie/TV catalog. Requires `query`. Use it to resolve the exact `media_id`
+before `overseerr_requests(operation="create")`; creating with a guessed ID is
+the most common request failure.
+
+**overseerr_users operations:** `list`, `get`, `create`, `update`, `delete`.
+`get` requires `user_id`. Request approval workflows key off Overseerr users,
+so resolve the requester's user record when triaging who asked for what.
+
+## Bazarr Detail: providers, languages, history
+
+**Operations:** `wanted`, `search`, `download`, `history`, `providers`,
+`languages`. `providers` lists configured subtitle providers and their status —
+check it first when searches come back empty. `languages` lists enabled subtitle
+languages. `history` shows past subtitle downloads. `wanted` lists episodes and
+movies missing subtitles in enabled languages. Subtitle files retrieved through
+Bazarr can feed downstream analysis pipelines (notably jellyfin-mcp RAG).
+
+## Orchestration Pipeline Stages
+
+`arr_orchestrate(operation="request")` runs a fixed pipeline and returns each
+step: (1) media-server availability — Jellyfin, then Plex, then Emby when
+configured; already in library means done, no *arr call. (2) Media-type
+detection — movie, series, album, or book, overridable via `media_type`.
+(3) Queue check — already queued titles report position instead of
+double-adding. (4) Add to the routed *arr with quality profile and root folder.
+(5) Result with the created record ID. Placeholder credentials
+(`your-*-api-key-here` from `.env.example`) count as unconfigured: media-server
+checks skip them instead of erroring, and unreachable media servers yield
+`<name>_error` pipeline steps rather than aborting the request.
+
+## Media-Server Bridges
+
+Three bridges back the availability checks with identical
+`{"success", "message", "data"}` shapes: Jellyfin (`JELLYFIN_URL` +
+`JELLYFIN_API_KEY`), Plex (`PLEX_URL` + `PLEX_TOKEN`), Emby (`EMBY_URL` +
+`EMBY_API_KEY`). All optional; orchestration works without them and simply
+skips the in-library check. `arr_orchestrate` operations `check_jellyfin`,
+`check_plex`, `check_emby` probe one bridge each for a title.
+
+## REST API Reference (webapp, `:10938/api/*`)
+
+`health` (all-service probe), `capabilities` (server/services/features matrix),
+`skills` (domain skill text for chat preprompts), `diagnostics` plus the
+`/v1/diagnostics` alias (CUA-NSIS smoke: backend port/status, CPU/memory/disk,
+tool total), `logs` (ring-buffer tail, `limit` param) and `logs/stream` (SSE
+live tail), per-service `*/summary` endpoints (counts, wanted, queue, disk),
+`orchestrator/summary`, `llm/discover` (Ollama/LM Studio presence),
+`llm/providers` (registry with detected/configured flags, never key bytes),
+`llm/models` (live model list per provider, `provider` + `base_url` params),
+`llm/onboarding` (starter facts + recommended path), `llm/chat` (POST backend
+proxy: provider, model, messages), `chat` (POST skill-first chat: message,
+history capped at 20 turns, personality, provider, model — personalities are
+arr-expert, media-curator, quick-summarizer, custom), `shutdown` (POST orderly
+exit: responds 200 then exits so flows checkpoint). The webapp Chat page uses
+only these endpoints — keys never leave the server, and the browser never
+fetches Ollama/LM Studio directly.
+
+## Delete-Safety Rules
+
+Every destructive tool defaults to the safe mode: `dry_run=true` previews
+without mutating; `delete_files` defaults false and additionally requires an
+explicit confirmation flag. Servarr DELETE endpoints return HTTP 200 with an
+empty body, which the client treats as success-with-empty-data rather than a
+JSON decode failure — a regression test pins this behavior so future client
+changes cannot reintroduce false failures. Authors, artists, and series are
+never cascade-deleted by book/album/episode tools. Bulk deletes preflight
+everything before mutating anything.
+
+## Webapp Pages
+
+Dashboard (live health cards per service, 15 s poll, hero with backend/LLM
+status), per-service pages (Radarr, Sonarr, Lidarr, Prowlarr, Readarr,
+Overseerr, Bazarr with counts/wanted/queue/disk), Orchestrate (pipeline viz +
+stack overview), Chat (Ollama/LM Studio via backend proxy, skill-first
+preprompt, personalities, persisted history), Inspector (interactive tool
+runner: pick tool, set params, execute via `/mcp`, raw JSON-RPC response),
+Inbox (ops feed), Tools (tool catalog with search/filter), Skills (skill
+registry), Logger (SSE live logs with filter/export), Help (setup, Docker,
+per-service install, API keys), Settings (LLM providers, backend health, port
+reference). Health dot uses exponential-backoff polling against `/api/health`.
+
+## Full Environment Reference
+
+Service triples `*_URL`, `*_API_KEY`, `*_ENABLED` for RADARR, SONARR, LIDARR,
+PROWLARR, READARR, OVERSEERR, BAZARR; `JELLYFIN_URL`/`JELLYFIN_API_KEY`,
+`PLEX_URL`/`PLEX_TOKEN`, `EMBY_URL`/`EMBY_API_KEY`; `ARR_MCP_TRANSPORT`
+(stdio|http|sse), `ARR_MCP_HOST`, `ARR_MCP_PORT` (default 10938),
+`ARR_MCP_PATH` (default /mcp); `ARR_SAMPLING_BASE_URL`,
+`ARR_SAMPLING_MODEL`, `ARR_SAMPLING_API_KEY` (agentic fallback LLM);
+`ARR_LOG_LEVEL`, `ARR_TIMEOUT`. Auto-discovery: set an API key without a URL
+and the server probes the service's default port. Backend `:10938`
+(FastMCP HTTP `/mcp` + REST `/api/*` + SSE `/api/logs/stream`), frontend
+`:10939` (Vite).
+
+## Transport Modes
+
+Stdio is the Claude Desktop path: the MCPB bundle runs `python -m arr_mcp`
+with `MCP_TRANSPORT=stdio` and speaks JSON-RPC over standard IO. HTTP serves
+the webapp, the Tauri sidecar, and container hosts: FastMCP's ASGI app mounts
+at `/mcp` on a FastAPI parent that also carries `/api/*`, with stateless HTTP
+and log level set via `FASTMCP_STATELESS_HTTP`/`FASTMCP_LOG_LEVEL` environment
+variables (constructor kwargs were removed in FastMCP 3.3). Tauri spawns set
+`ARR_TAURI=1`, which forces HTTP so the frozen backend opens the port the
+webview polls. `POST /api/shutdown` responds 200 immediately and exits 500 ms
+later so fleet launchers can bounce the process without losing in-flight work.
+SSE transport is accepted alongside HTTP for streaming clients.
+
+## Service Discovery Protocol
+
+Each service client initializes independently at startup from its triple. URL
+set plus key plus enabled means configured. Key set without URL means probe
+the default port (Radarr 7878, Sonarr 8989, Lidarr 8686, Prowlarr 9696,
+Readarr 8787, Overseerr 5055, Bazarr 6767, Jellyfin/Emby 8096, Plex 32400);
+a responding port self-completes the URL. Unconfigured services skip tool
+registration entirely, so the tool surface always reflects reality — a missing
+`radarr_movies` means Radarr is not configured, never a bug. `arr_health`
+reports per-service reachable/version/reason and is the first call in every
+session. Media-server bridges follow the same pattern with placeholder-key
+detection: example credentials never produce authenticated calls.
+
+## Sampling Contract (arr_agentic)
+
+`arr_agentic(operation, prompt, ctx)` prefers FastMCP 3.4 sampling: the stack
+context (available services plus the user prompt) is sent as string messages
+with a system prompt identifying the orchestrator role, capped at 1024 tokens.
+The `SamplingResult.text` becomes the response with `sampling_used=true`. Any
+sampling failure (unsupported client, timeout, error) falls back to a
+structured brief — service inventory plus which concrete tools to call next —
+with `sampling_used=false`. The tool never raises for sampling reasons; only
+unexpected internal errors return `success=false`. Client agents without
+sampling support should treat the fallback brief as the plan and execute the
+named tools themselves in order, starting with the availability checks.
+
+## Security Model
+
+The server holds API keys in process memory from `.env`, never writes them to
+logs, and never returns key bytes through any tool or endpoint — provider
+registries expose detected/configured flags only. Destructive actions are
+gated twice (dry-run default plus confirmation flags for disk deletes).
+`.env` is gitignored fleet-wide; only `.env.example` with placeholders ships.
+CORS uses an explicit origin list (backend/frontend localhost, Goliath LAN
+name, Tauri schemes) plus an unconditional regex covering Tailscale MagicDNS;
+the webapp calls same-origin relatively except behind the Tauri gate, where an
+absolute backend URL is required. No tool shells out, no tool reads arbitrary
+paths, and bulk mutations preflight before touching anything.
+
+## Testing and Quality Gates
+
+289 pytest tests with pytest-httpx HTTP mocking (service clients fully mocked;
+no live *arr needed), coverage threshold 50 percent enforced in
+`pyproject.toml` — current coverage holds above 60 percent, with thin spots on
+the Prefab card builders and the HTTP transport runner that e2e smoke covers
+instead. Ruff check plus format-check, mypy over `src/arr_mcp`, Biome
+check plus `tsc -b` plus production build for the webapp, Playwright e2e smoke
+covering every page. CI runs backend and webapp jobs on windows-latest with
+Node 22 and `astral-sh/setup-uv`. Launcher contract: `fleet-start.config.ps1`
+declares module-serve `arr_mcp` with `--http --port 10938` and `/api/health`;
+the fleet engine probes it before opening the frontend.
