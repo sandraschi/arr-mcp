@@ -18,7 +18,7 @@ serve:
     uv run python -m arr_mcp --http --port 10938
 
 webapp:
-    powershell webapp/start.ps1
+    powershell.exe -NoProfile -File '{{justfile_directory()}}\webapp\start.ps1'
 
 build-webapp:
     cd webapp; npm run build

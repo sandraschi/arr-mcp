@@ -1,1 +1,1 @@
-{"hooks": "../hooks/hooks.json", "name": "arr-mcp", "version": "1.0.0"}
+{"description": "arr-mcp session context for Claude Code", "hooks": "../hooks/hooks.json", "name": "arr-mcp", "version": "1.0.0"}
