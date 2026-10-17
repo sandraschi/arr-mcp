@@ -42,8 +42,12 @@
 
 ## REST (webapp, `:10938/api/*`)
 
-`health`, `status`-via-health, `capabilities`, `skills`, `diagnostics` (+ `/v1/diagnostics`),
-`logs`, `logs/stream` (SSE), per-service `*/summary`, `orchestrator/summary`,
+`health`, `status` (uptime, version, configured count), `capabilities`, `skills`,
+`diagnostics` (+ `/v1/diagnostics`), `docker` (detected Servarr containers,
+fail-soft), `fleet` (plex-mcp/jellyfin-mcp probes + dashboard links),
+`logs`, `logs/stream` (SSE), per-service `*/summary` (`enabled:false` + setup
+guide when unconfigured), `orchestrator/summary`, `orchestrate/request` (POST,
+runs the shared request pipeline),
 `llm/discover|providers|models|onboarding`, `llm/chat` (POST proxy), `chat` (POST,
 skill-first), `shutdown` (POST, orderly exit).
 

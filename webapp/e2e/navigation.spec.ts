@@ -11,7 +11,7 @@ const pages = [
 	{ link: "Bazarr", heading: "Bazarr", path: "/bazarr" },
 	{ link: "Orchestrate", heading: "Orchestrate", path: "/orchestrate" },
 	{ link: "Chat", heading: "Chat", path: "/chat" },
-	{ link: "Logger", heading: "Logger", path: "/logger" },
+	{ link: "Logger", heading: "Server Logs", path: "/logger" },
 	{ link: "Help", heading: "Help", path: "/help" },
 	{ link: "Settings", heading: "Settings", path: "/settings" },
 ];

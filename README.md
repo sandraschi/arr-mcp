@@ -86,9 +86,9 @@ npm run dev        # → http://localhost:10939
 
 | Page | Route | What it does |
 |------|-------|-------------|
-| **Dashboard** | `/` | Live health cards for all 7 services, polls every 15s |
-| **Radarr / Sonarr / Lidarr / Prowlarr / Readarr / Overseerr / Bazarr** | `/{service}` | Live per-service data: counts, wanted, queue, disk space |
-| **Orchestrate** | `/orchestrate` | Cross-arr pipeline viz, stack overview with total wanted |
+| **Dashboard** | `/` | KPIs (items/wanted/reachable), per-service cards with Open/Setup actions, detected Docker containers, fleet siblings |
+| **Radarr / Sonarr / Lidarr / Prowlarr / Readarr / Overseerr / Bazarr** | `/{service}` | Live per-service data: counts, wanted, queue, disk space — or a setup guide when unconfigured |
+| **Orchestrate** | `/orchestrate` | Request form (runs the real pipeline) + stack overview with total wanted |
 | **Chat** | `/chat` | AI chat with Ollama/LM Studio model selection |
 | **Inspector** | `/inspector` | Interactive MCP tool runner — select, param, execute |
 | **Logger** | `/logger` | Real-time SSE log streaming with filter/export |
@@ -108,6 +108,18 @@ npm run dev        # → http://localhost:10939
        ↓
   Add to Radarr → downloading...
 ```
+
+The same pipeline runs from the webapp: the Orchestrate page has a request
+form backed by `POST /api/orchestrate/request`.
+
+## Fleet crossconnect (plex-mcp / jellyfin-mcp)
+
+Three servers, three jobs: **arr-mcp acquires**, **plex-mcp owns Plex**,
+**jellyfin-mcp owns Jellyfin**. arr-mcp checks your Plex/Jellyfin/Emby
+*servers* directly before downloading — it does not route through the sibling
+MCP servers, and nothing is shared between them. `GET /api/fleet` probes both
+siblings live; the Dashboard links to their dashboards when running. Full
+contract: [`docs/FLEET_MEDIA_TOPOLOGY.md`](docs/FLEET_MEDIA_TOPOLOGY.md).
 
 ## Project Structure
 

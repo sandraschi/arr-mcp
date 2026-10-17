@@ -1,4 +1,47 @@
 
+## [Unreleased] — 2026-10-17 (functional pass)
+
+### Fixed (chat was crashing)
+- Chat page infinite render loop: `useLlm((s) => ({...}))` returned a fresh
+  object per render, zustand re-rendered forever, React unmounted the page.
+  Selectors now read primitives. Chat was a blank page, not a slow one.
+- Stale e2e specs updated to reality (Logger heading is "Server Logs";
+  networkidle waits replaced on the SSE-backed Logger page; orchestrate
+  selector scoped; invalid-body test moved to the real
+  `POST /api/orchestrate/request` 422 path).
+- Added `GET /api/status` (uptime, version, configured count) per the REST
+  checklist row the suite already expected.
+- `/health` alias now redirects all methods (POST no longer dies inside the
+  MCP mount with a bare 404).
+- E2E lesson relearned: a stale backend squatting `:10938` plus
+  `reuseExistingServer: true` silently tested old code. Kill port squatters
+  before trusting a green run.
+
+### Fixed
+- Service pages no longer 404 on fresh machines: all `*/summary` endpoints
+  return 200 `{enabled: false, setup: {...}}` for unconfigured services, and
+  each page renders a setup guide (compose command, API key location, .env
+  keys) instead of a raw HTTP 404 banner.
+- Tailwind service colors were silently unstyled: dynamic `text-${color}` /
+  `bg-${color}` interpolations never generate CSS. Replaced with a static
+  class map (`webapp/src/utils/colors.ts`); verified `text-radarr`,
+  `bg-radarr`, `border-radarr/30` … in the production bundle.
+- Orchestrate page could describe the pipeline but never run it: added a
+  request form backed by new `POST /api/orchestrate/request`, which shares
+  the extracted `arr_mcp.orchestration.request_media` pipeline with the MCP
+  tool (identical logic, no drift).
+
+### Added
+- Dashboard: KPI row (library items, wanted/missing, reachable), Request-a-title
+  + Live-logs actions, per-card Open/Setup links, red onboarding CTA when zero
+  services reachable, detected-Docker-containers section, fleet siblings section.
+- `GET /api/docker`: fail-soft `docker ps` detection of Servarr/media containers
+  (name, image, ports, state) — surfaces "container running, key missing" states.
+- `GET /api/fleet`: live probes of plex-mcp (`:10740`) and jellyfin-mcp
+  (`:10934`) with dashboard deep-links.
+- `docs/services/*.md`: per-service guides (install, key, env, ops, triage).
+- `docs/FLEET_MEDIA_TOPOLOGY.md`: arr/plex/jellyfin ownership contract.
+
 ## [Unreleased] — 2026-10-17
 
 ### Fixed (assfix cold re-audit)

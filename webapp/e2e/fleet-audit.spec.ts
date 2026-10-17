@@ -31,7 +31,9 @@ test.describe("Fleet Audit", () => {
 		];
 		for (const route of routes) {
 			await page.goto(route);
-			await page.waitForLoadState("networkidle");
+			// "domcontentloaded": /logger holds a persistent SSE stream, so
+			// "networkidle" never settles there by design.
+			await page.waitForLoadState("domcontentloaded");
 			await expect(page.locator("#root")).toBeAttached();
 		}
 	});
@@ -51,12 +53,12 @@ test.describe("REST API", () => {
 		expect(resp.status()).toBe(200);
 	});
 
-	test("POST /api/health with invalid body returns 422", async ({ request }) => {
-		const resp = await request.post(`${BE}/api/health`, {
+	test("POST /api/orchestrate/request with invalid body returns 422", async ({ request }) => {
+		const resp = await request.post(`${BE}/api/orchestrate/request`, {
 			data: { invalid: true },
 			headers: { "Content-Type": "application/json" },
 		});
-		expect([422, 405, 400]).toContain(resp.status());
+		expect(resp.status()).toBe(422);
 	});
 });
 
