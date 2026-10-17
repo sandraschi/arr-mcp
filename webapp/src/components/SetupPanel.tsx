@@ -118,12 +118,13 @@ export default function SetupPanel({
 						3
 					</span>
 					<div>
-						<p className="text-zinc-200 text-xs font-medium mb-1">Add to .env and restart the backend</p>
-						<code className="block bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-300 overflow-x-auto whitespace-pre">
-							{setup.env_keys
-								.map((k) => `${k}=${k.endsWith("_URL") ? serviceUrl : k.endsWith("_ENABLED") ? "true" : "<paste-key>"}`)
-								.join("\n")}
-						</code>
+						<p className="text-zinc-200 text-xs font-medium mb-1">Save the URL + API key — no file editing</p>
+						<p className="text-xs text-zinc-500">
+							Paste them in <span className="text-zinc-300">Settings → Services</span> (Test, then Save — live
+							immediately, no restart). Prefer files?{" "}
+							<code className="bg-zinc-800 px-1.5 py-0.5 rounded text-yellow-400">{setup.env_keys.join(" ")}</code> in{" "}
+							<span className="font-mono">.env</span> still works.
+						</p>
 					</div>
 				</li>
 			</ol>
