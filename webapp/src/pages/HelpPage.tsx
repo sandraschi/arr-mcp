@@ -6,11 +6,12 @@ import {
 	ExternalLink,
 	HelpCircle,
 	Key,
-	Monitor,
+	Network,
 	Server,
 	Terminal,
 } from "lucide-react";
 import { useState } from "react";
+import { textColor } from "../utils/colors";
 
 interface ToolRef {
 	name: string;
@@ -239,7 +240,7 @@ export default function HelpPage() {
 					<h3 className="font-semibold text-sm">What is arr-mcp?</h3>
 				</div>
 				<p className="text-sm text-zinc-400 leading-relaxed">
-					arr-mcp is a FastMCP 3.3 server that wraps the complete *arr automation stack under a single MCP interface.
+					arr-mcp is a FastMCP 3.4 server that wraps the complete *arr automation stack under a single MCP interface.
 					One server manages Radarr (Movies), Sonarr (TV), Lidarr (Music), Prowlarr (Indexers), Readarr (Books),
 					Overseerr (Requests), and Bazarr (Subtitles). Each service is independently optional and configurable via{" "}
 					<code className="bg-zinc-800 px-1.5 py-0.5 rounded text-xs">.env</code>.
@@ -401,7 +402,7 @@ export default function HelpPage() {
 						{tools.map((tool) => (
 							<div key={tool.name} className="bg-zinc-800 rounded-lg p-3">
 								<div className="flex items-center gap-2 mb-1">
-									<code className={`text-xs font-mono px-1.5 py-0.5 rounded bg-zinc-700 text-${tool.color}`}>
+									<code className={`text-xs font-mono px-1.5 py-0.5 rounded bg-zinc-700 ${textColor(tool.color)}`}>
 										{tool.name}
 									</code>
 								</div>
@@ -411,6 +412,28 @@ export default function HelpPage() {
 						))}
 					</div>
 				)}
+			</section>
+
+			{/* Fleet topology: who owns what */}
+			<section className="bg-zinc-900 border border-zinc-800 rounded-xl p-5 mb-4" data-testid="help-fleet">
+				<div className="flex items-center gap-2 mb-3">
+					<Network size={18} className="text-zinc-400" />
+					<h3 className="font-semibold text-sm">Fleet topology — arr-mcp, plex-mcp, jellyfin-mcp</h3>
+				</div>
+				<p className="text-sm text-zinc-400 leading-relaxed mb-3">
+					Three servers, three jobs. <span className="text-zinc-200">arr-mcp acquires media</span> (Radarr, Sonarr,
+					Lidarr, Prowlarr, Readarr, Overseerr, Bazarr).{" "}
+					<span className="text-zinc-200">plex-mcp owns the Plex server connection</span> (library, playback, RAG), and{" "}
+					<span className="text-zinc-200">jellyfin-mcp owns Jellyfin</span>. arr-mcp talks to your Plex/Jellyfin/Emby{" "}
+					<em>servers</em> directly for before-you-download availability checks — it does not route through the sibling
+					MCP servers, and there is intentionally no shared state between them. The fleet lane is: request in arr-mcp
+					(or Overseerr) → download via *arr → watch in Plex/Jellyfin. The Dashboard probes both siblings live and links
+					to their dashboards when they are running.
+				</p>
+				<div className="text-xs font-mono text-zinc-500 space-y-1">
+					<div>plex-mcp backend :10740 · frontend :10741</div>
+					<div>jellyfin-mcp backend :10934 · frontend :10935</div>
+				</div>
 			</section>
 
 			{/* Links */}

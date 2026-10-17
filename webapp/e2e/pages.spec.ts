@@ -30,7 +30,7 @@ test.describe("Settings page", () => {
 test.describe("Logger page", () => {
 	test("loads log viewer controls", async ({ page }) => {
 		await page.goto("/logger");
-		await expect(page.getByRole("heading", { name: "Logger" })).toBeVisible();
+		await expect(page.getByRole("heading", { name: "Server Logs" })).toBeVisible();
 		await expect(page.getByPlaceholder("Filter...")).toBeVisible();
 	});
 });
@@ -40,7 +40,14 @@ test.describe("Orchestrate page", () => {
 		await page.goto("/orchestrate");
 		await expect(page.getByRole("heading", { name: "Orchestrate" })).toBeVisible();
 		await expect(page.getByText("Jellyfin Check")).toBeVisible();
-		await expect(page.getByText("Type Detection")).toBeVisible();
+		await expect(page.getByTestId("orchestrate-pipeline").getByText("Type Detection")).toBeVisible();
+	});
+
+	test("request form runs the pipeline", async ({ page }) => {
+		await page.goto("/orchestrate");
+		await page.getByTestId("orchestrate-title").fill("Dune");
+		await page.getByTestId("orchestrate-submit").click();
+		await expect(page.getByTestId("orchestrate-result")).toBeVisible({ timeout: 60000 });
 	});
 });
 

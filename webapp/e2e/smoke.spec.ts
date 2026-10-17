@@ -20,7 +20,9 @@ const PAGES = [
 for (const { path, name } of PAGES) {
   test(`${name} loads without crash`, async ({ page }) => {
     await page.goto(path);
-    await page.waitForLoadState("networkidle");
+    // "domcontentloaded": /logger holds a persistent SSE stream, so
+    // "networkidle" never settles there by design.
+    await page.waitForLoadState("domcontentloaded");
     await expect(page.locator("h2")).toBeVisible({ timeout: 10000 });
   });
 }
