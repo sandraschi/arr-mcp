@@ -150,7 +150,8 @@ async def probe_service(name: str, url: str, api_key: str, timeout: int = 10) ->
         return {"reachable": False, "error": "URL and API key are required."}
     try:
         client = defs[name]["cls"](url.rstrip("/"), api_key, timeout)
-        status = await client.get_system_status()
+        probe = client.health_check if hasattr(client, "health_check") else client.get_system_status
+        status = await probe()
         version = status.get("version", "?") if isinstance(status, dict) else "?"
         return {"reachable": True, "version": str(version)}
     except Exception as exc:
