@@ -130,7 +130,7 @@ def main() -> None:
     registered_count = sum(1 for c in clients.values() if c is not None)
     logger.info("Registered tools for %d/%d services", registered_count, len(clients))
 
-    api_router = create_api_router(clients, log_buffer=LOG_BUFFER)
+    api_router = create_api_router(clients, log_buffer=LOG_BUFFER, config=config)
     run_server(mcp, "arr-mcp", api_router=api_router)
 
 
