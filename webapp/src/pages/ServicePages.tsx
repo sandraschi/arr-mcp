@@ -1,8 +1,12 @@
 import { AlertTriangle, HardDrive, Package, RefreshCw } from "lucide-react";
 import { useEffect, useState } from "react";
+import SetupPanel, { type ServiceSetup } from "../components/SetupPanel";
 import { apiFetch } from "../utils/api";
+import { bgColor, borderSoft, textColor } from "../utils/colors";
 
 interface SummaryData {
+	reason?: string;
+	setup?: ServiceSetup;
 	movies?: number;
 	series?: number;
 	artists?: number;
@@ -73,6 +77,10 @@ export function ServicePage({
 	const [loading, setLoading] = useState(true);
 	const [error, setError] = useState("");
 	const [raw, setRaw] = useState<Record<string, unknown> | null>(null);
+	const [docker, setDocker] = useState<{
+		available: boolean;
+		containers: { service: string; host_port: number | null; state: string }[];
+	} | null>(null);
 
 	useEffect(() => {
 		let mounted = true;
@@ -80,7 +88,12 @@ export function ServicePage({
 			try {
 				const json = await apiFetch<{ success: boolean; data: Record<string, unknown> }>(endpoint);
 				if (mounted) {
-					setData(json.data as SummaryData);
+					const summary = json.data as SummaryData;
+					if (summary && summary.enabled === false) {
+						setData(null);
+					} else {
+						setData(summary);
+					}
 					setRaw(json.data);
 					setError("");
 				}
@@ -90,7 +103,16 @@ export function ServicePage({
 				if (mounted) setLoading(false);
 			}
 		}
+		async function loadDocker() {
+			try {
+				const json = await apiFetch<{ success: boolean; data: typeof docker }>("/api/docker");
+				if (mounted) setDocker(json.data);
+			} catch {
+				if (mounted) setDocker(null);
+			}
+		}
 		poll();
+		loadDocker();
 		const interval = setInterval(poll, 30000);
 		return () => {
 			mounted = false;
@@ -122,6 +144,15 @@ export function ServicePage({
 				>
 					<AlertTriangle size={16} /> {error}
 				</div>
+			)}
+
+			{raw && (raw as SummaryData).enabled === false && (raw as SummaryData).setup && (
+				<SetupPanel
+					setup={(raw as SummaryData).setup as ServiceSetup}
+					serviceKey={title.toLowerCase()}
+					containerRunning={docker?.containers.some((c) => c.service === title.toLowerCase()) ?? false}
+					containerPort={docker?.containers.find((c) => c.service === title.toLowerCase())?.host_port ?? null}
+				/>
 			)}
 
 			{data && (
@@ -164,7 +195,10 @@ export function ServicePage({
 										<div key={`disk-${i}`} className="flex items-center gap-3 text-sm">
 											<span className="text-zinc-400 w-32 truncate font-mono text-xs">{d.path}</span>
 											<div className="flex-1 bg-zinc-800 rounded-full h-2.5">
-												<div className={`bg-${color} h-2.5 rounded-full`} style={{ width: `${Math.min(pct, 100)}%` }} />
+												<div
+													className={`${bgColor(color)} h-2.5 rounded-full`}
+													style={{ width: `${Math.min(pct, 100)}%` }}
+												/>
 											</div>
 											<span className="text-zinc-500 text-xs font-mono">{pct.toFixed(1)}%</span>
 										</div>
@@ -202,7 +236,7 @@ export function ServicePage({
 function PageHeader({ title, subtitle, color }: { title: string; subtitle: string; color: string }) {
 	return (
 		<div className="flex items-center gap-3 mb-6">
-			<Package size={24} className={`text-${color}`} />
+			<Package size={24} className={textColor(color)} />
 			<h2 className="text-2xl font-bold">{title}</h2>
 			<span className="text-xs text-zinc-500 bg-zinc-800 px-2 py-0.5 rounded">{subtitle}</span>
 		</div>
@@ -216,9 +250,9 @@ function StatCard({
 	highlight,
 }: { label: string; value: number; color: string; highlight?: boolean }) {
 	return (
-		<div className={`bg-zinc-900 border ${highlight ? `border-${color}/30` : "border-zinc-800"} rounded-xl p-5`}>
+		<div className={`bg-zinc-900 border ${highlight ? borderSoft(color) : "border-zinc-800"} rounded-xl p-5`}>
 			<p className="text-xs text-zinc-500 mb-1">{label}</p>
-			<p className={`text-3xl font-bold text-${color}`}>{value.toLocaleString()}</p>
+			<p className={`text-3xl font-bold ${textColor(color)}`}>{value.toLocaleString()}</p>
 		</div>
 	);
 }

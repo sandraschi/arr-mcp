@@ -80,7 +80,9 @@ export default function ChatPage() {
 	const [loadingModels, setLoadingModels] = useState(false);
 	const [personalityId, setPersonalityId] = useState(() => loadPersonality());
 	const [skillLoaded, setSkillLoaded] = useState(false);
-	const llmDetected = useLlm((s) => ({ ollama: s.ollamaDetected, lmstudio: s.lmstudioDetected }));
+	const ollamaDetected = useLlm((s) => s.ollamaDetected);
+	const lmstudioDetected = useLlm((s) => s.lmstudioDetected);
+	const llmDetected = { ollama: ollamaDetected, lmstudio: lmstudioDetected };
 	const refreshLlm = useLlm((s) => s.refresh);
 	const chatEndRef = useRef<HTMLDivElement>(null);
 
