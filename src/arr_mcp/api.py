@@ -15,6 +15,8 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
+from arr_mcp.discovery import SERVICE_SETUP, detect_docker_containers, probe_fleet
+
 logger = logging.getLogger(__name__)
 
 OLLAMA_DEFAULT_URL = "http://127.0.0.1:11434"
@@ -35,6 +37,19 @@ class ChatRequest(BaseModel):
     provider: str = Field(default="ollama")
     base_url: str | None = None
     model: str | None = None
+
+
+class OrchestrateRequest(BaseModel):
+    media_title: str = Field(description="Title to request (movie, series, album, or book).")
+    media_type: str | None = Field(
+        default=None, description="movie | series | album | book. Auto-detected when omitted."
+    )
+    year: int | None = Field(default=None, description="Year for disambiguation.")
+    quality_profile_id: int | None = Field(default=None, description="Quality profile ID for auto-add.")
+    root_folder_path: str | None = Field(default=None, description="Root folder path for auto-add.")
+    media_server: str | None = Field(
+        default=None, description="jellyfin | plex | emby. Checks all configured servers when omitted."
+    )
 
 
 def _skill_text() -> str:
@@ -95,8 +110,48 @@ async def _forward_llm_chat(provider: str, base_url: str, model: str, messages: 
         return (data.get("message") or {}).get("content", "")
 
 
-def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] | None = None) -> APIRouter:
+def _not_configured_payload(service: str) -> dict:
+    """200-shape for unconfigured services: no 404s on fresh machines."""
+    return {
+        "success": True,
+        "data": {
+            "enabled": False,
+            "reason": "not configured",
+            "setup": SERVICE_SETUP.get(service, {}),
+        },
+    }
+
+
+def create_api_router(
+    clients: dict,
+    log_buffer: collections.deque | list[dict] | None = None,
+    config=None,
+) -> APIRouter:
+    import time
+
+    started = time.monotonic()
     router = APIRouter(prefix="/api")
+
+    # ── status (server info: uptime, version, tool surface) ──────
+
+    @router.get("/status")
+    async def api_status():
+        from arr_mcp import __version__
+
+        configured = sum(1 for c in clients.values() if c is not None)
+        return JSONResponse(
+            content={
+                "success": True,
+                "data": {
+                    "server": "arr-mcp",
+                    "version": __version__,
+                    "uptime_seconds": round(time.monotonic() - started, 1),
+                    "services_configured": configured,
+                    "services_total": len(clients),
+                    "transports": ["stdio", "http", "sse"],
+                },
+            }
+        )
 
     # ── diagnostics (CUA-NSIS smoke test) ───────────────────────
 
@@ -318,7 +373,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
     async def radarr_summary():
         client = clients.get("radarr")
         if client is None:
-            raise HTTPException(404, "Radarr not configured")
+            return JSONResponse(content=_not_configured_payload("radarr"))
         try:
             movies = await client.get_movies()
             wanted = await client.get_wanted_missing()
@@ -353,7 +408,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
     async def sonarr_summary():
         client = clients.get("sonarr")
         if client is None:
-            raise HTTPException(404, "Sonarr not configured")
+            return JSONResponse(content=_not_configured_payload("sonarr"))
         try:
             series_list = await client.get_series()
             wanted = await client.get_wanted_missing()
@@ -388,7 +443,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
     async def lidarr_summary():
         client = clients.get("lidarr")
         if client is None:
-            raise HTTPException(404, "Lidarr not configured")
+            return JSONResponse(content=_not_configured_payload("lidarr"))
         try:
             artists = await client.get_artists()
             wanted = await client.get_wanted_missing()
@@ -412,7 +467,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
     async def prowlarr_summary():
         client = clients.get("prowlarr")
         if client is None:
-            raise HTTPException(404, "Prowlarr not configured")
+            return JSONResponse(content=_not_configured_payload("prowlarr"))
         try:
             indexers = await client.get_indexers()
             apps = await client.get_applications()
@@ -434,7 +489,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
     async def readarr_summary():
         client = clients.get("readarr")
         if client is None:
-            raise HTTPException(404, "Readarr not configured")
+            return JSONResponse(content=_not_configured_payload("readarr"))
         try:
             authors = await client.get_authors()
             wanted = await client.get_wanted_missing()
@@ -458,7 +513,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
     async def overseerr_summary():
         client = clients.get("overseerr")
         if client is None:
-            raise HTTPException(404, "Overseerr not configured")
+            return JSONResponse(content=_not_configured_payload("overseerr"))
         try:
             requests = await client.get_requests(take=1)
             pending = await client.get_requests(take=100, request_filter="pending")
@@ -480,7 +535,7 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
     async def bazarr_summary():
         client = clients.get("bazarr")
         if client is None:
-            raise HTTPException(404, "Bazarr not configured")
+            return JSONResponse(content=_not_configured_payload("bazarr"))
         try:
             wanted = await client.get_all_wanted()
             movies_wanted = len(wanted.get("movies", {}).get("data", []))
@@ -532,5 +587,46 @@ def create_api_router(clients: dict, log_buffer: collections.deque | list[dict] 
             "data": result,
             "total_wanted": total_wanted,
         }
+
+    # ── orchestrate request (webapp form runs the real pipeline) ───
+
+    @router.post("/orchestrate/request")
+    async def api_orchestrate_request(body: OrchestrateRequest):
+        """Run the cross-arr request pipeline (same logic as the MCP tool)."""
+        from arr_mcp.orchestration import build_bridges, request_media
+
+        if config is None:
+            raise HTTPException(500, "Server started without config; restart the backend.")
+        bridges = build_bridges(config)
+        try:
+            result = await request_media(
+                clients,
+                bridges,
+                body.media_title,
+                media_type=body.media_type,
+                quality_profile_id=body.quality_profile_id,
+                root_folder_path=body.root_folder_path,
+                media_server=body.media_server,
+            )
+        except Exception as e:
+            raise HTTPException(502, str(e)) from e
+        return JSONResponse(content=result)
+
+    # ── docker container detection ───────────────────────────────
+
+    @router.get("/docker")
+    async def api_docker():
+        """Report Servarr/media containers from ``docker ps`` (fail-soft)."""
+        import asyncio
+
+        payload = await asyncio.to_thread(detect_docker_containers)
+        return JSONResponse(content={"success": True, "data": payload})
+
+    # ── fleet siblings (plex-mcp / jellyfin-mcp status + links) ───
+
+    @router.get("/fleet")
+    async def api_fleet():
+        """Probe sibling media MCP servers (fail-soft, powers dashboard links)."""
+        return JSONResponse(content=await probe_fleet())
 
     return router

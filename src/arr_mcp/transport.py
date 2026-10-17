@@ -90,7 +90,7 @@ def _run_http(
     if api_router:
         app.include_router(api_router)
 
-        @app.get("/health")
+        @app.api_route("/health", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
         async def health_alias():
             from fastapi.responses import RedirectResponse
 
