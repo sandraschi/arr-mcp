@@ -19,9 +19,8 @@ logger = logging.getLogger(__name__)
 
 def register_radarr_tools(mcp, client) -> None:
     """Register Radarr tools on the FastMCP instance."""
-    if client is None:
-        logger.info("Radarr not configured - skipping tools")
-        return
+    # Always registered: `client` is a LiveClient proxy resolving the
+    # current credentials per call (Settings → Services, no restart).
 
     @mcp.tool(
         annotations={"readOnlyHint": False, "destructiveHint": False},

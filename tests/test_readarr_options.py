@@ -65,12 +65,18 @@ async def readarr():
     await client.close()
 
 
-def test_disabled_readarr_client_does_not_register_options_tool():
+@pytest.mark.asyncio
+async def test_disabled_readarr_client_registers_but_fails_gracefully():
+    from arr_mcp.service_store import LiveClient
+
     mcp = RecordingMCP()
 
-    register_readarr_options(mcp, None)
+    register_readarr_options(mcp, LiveClient({"readarr": None}, "readarr", "Readarr"))
 
-    assert "readarr_add_options" not in mcp.tools
+    assert "readarr_add_options" in mcp.tools
+    result = await mcp.tools["readarr_add_options"]()
+    assert result["success"] is False
+    assert "not configured" in result["message"]
 
 
 @pytest.mark.asyncio

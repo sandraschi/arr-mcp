@@ -60,10 +60,15 @@ class TestRadarrTools:
         assert result["success"] is False
 
     @pytest.mark.asyncio
-    async def test_skips_registration_when_client_none(self):
+    async def test_registers_always_but_fails_gracefully_when_client_none(self):
+        from arr_mcp.service_store import LiveClient
+
         mcp = MockMCP()
-        register_radarr_tools(mcp, None)
-        assert "radarr_movies" not in mcp.tools
+        register_radarr_tools(mcp, LiveClient({"radarr": None}, "radarr", "Radarr"))
+        assert "radarr_movies" in mcp.tools
+        result = await mcp.tools["radarr_movies"](operation="list")
+        assert result["success"] is False
+        assert "not configured" in result["message"]
 
 
 class TestSonarrTools:
@@ -86,10 +91,15 @@ class TestSonarrTools:
         assert len(result["data"]) == 1
 
     @pytest.mark.asyncio
-    async def test_skips_when_unconfigured(self):
+    async def test_registers_always_but_fails_gracefully_when_unconfigured(self):
+        from arr_mcp.service_store import LiveClient
+
         mcp = MockMCP()
-        register_sonarr_tools(mcp, None)
-        assert "sonarr_series" not in mcp.tools
+        register_sonarr_tools(mcp, LiveClient({"sonarr": None}, "sonarr", "Sonarr"))
+        assert "sonarr_series" in mcp.tools
+        result = await mcp.tools["sonarr_series"](operation="list")
+        assert result["success"] is False
+        assert "not configured" in result["message"]
 
 
 class TestLidarrTools:

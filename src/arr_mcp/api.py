@@ -51,6 +51,23 @@ class DockerStartRequest(BaseModel):
     )
 
 
+class ServiceTestRequest(BaseModel):
+    service: str = Field(description="Service key (radarr, sonarr, lidarr, prowlarr, readarr, overseerr, bazarr).")
+    url: str = Field(description="Service base URL, e.g. http://localhost:7878.")
+    api_key: str = Field(default="", description="Service API key (Settings → General in the service UI).")
+    use_saved: bool = Field(
+        default=False,
+        description="Fill an empty api_key from the saved override, so saved credentials can be re-tested.",
+    )
+
+
+class ServiceSaveRequest(BaseModel):
+    service: str = Field(description="Service key.")
+    url: str | None = Field(default=None, description="Service base URL. Omitted = keep saved value.")
+    api_key: str | None = Field(default=None, description="Service API key. Omitted = keep saved value.")
+    enabled: bool | None = Field(default=None, description="Enable/disable. Omitted = keep saved value.")
+
+
 class OrchestrateRequest(BaseModel):
     media_title: str = Field(description="Title to request (movie, series, album, or book).")
     media_type: str | None = Field(
@@ -676,5 +693,124 @@ def create_api_router(
     async def api_fleet():
         """Probe sibling media MCP servers (fail-soft, powers dashboard links)."""
         return JSONResponse(content=await probe_fleet())
+
+    # ── service credentials (Settings → Services, no .env editing) ───
+
+    @router.get("/config/services")
+    async def api_config_services():
+        """List all services with effective config (keys masked) and live state."""
+        from arr_mcp.service_store import load_store, service_defs
+
+        if config is None:
+            raise HTTPException(500, "Server started without config.")
+        defs = service_defs()
+        store = load_store()
+        items = []
+        for name, spec in defs.items():
+            svc = getattr(config, spec["attr"])
+            items.append(
+                {
+                    "service": name,
+                    "label": spec["label"],
+                    "enabled": svc.enabled,
+                    "url": svc.url,
+                    "key_set": bool(svc.api_key),
+                    "source": "file" if name in store else ("env" if (svc.url or svc.api_key) else "none"),
+                    "live": clients.get(name) is not None,
+                    "default_port": spec["port"],
+                }
+            )
+        return JSONResponse(content={"success": True, "data": items})
+
+    @router.post("/config/test")
+    async def api_config_test(body: ServiceTestRequest):
+        """Probe URL + key without saving. Returns reachable/version/error."""
+        from arr_mcp.service_store import load_store, probe_service
+
+        if config is None:
+            raise HTTPException(500, "Server started without config.")
+        api_key = body.api_key
+        if not api_key and body.use_saved:
+            saved = load_store().get(body.service, {})
+            api_key = saved.get("api_key", "")
+        result = await probe_service(body.service, body.url, api_key, config.timeout)
+        return JSONResponse(content={"success": True, "data": result})
+
+    @router.post("/config/services")
+    async def api_config_save(body: ServiceSaveRequest):
+        """Save credentials, rebuild the live client, take effect immediately.
+
+        No restart needed: MCP tools resolve the client per call. Returns the
+        probe result so the UI can confirm the service answers.
+        """
+        import asyncio
+
+        from arr_mcp.config import ArrServiceConfig
+        from arr_mcp.service_store import build_client, load_store, probe_service, save_store, service_defs
+
+        if config is None:
+            raise HTTPException(500, "Server started without config.")
+        defs = service_defs()
+        if body.service not in defs:
+            raise HTTPException(400, f"Unknown service '{body.service}'.")
+        store = load_store()
+        current = store.get(body.service, {})
+        entry = {
+            "url": (body.url.strip() if body.url else current.get("url", "")).rstrip("/"),
+            "api_key": body.api_key if body.api_key else current.get("api_key", ""),
+            "enabled": body.enabled if body.enabled is not None else current.get("enabled", True),
+        }
+        store[body.service] = entry
+        await asyncio.to_thread(save_store, store)
+        setattr(config, defs[body.service]["attr"], ArrServiceConfig(**entry))
+        clients[body.service] = await asyncio.to_thread(build_client, body.service, config)
+        probe = await probe_service(body.service, entry["url"], entry["api_key"], config.timeout)
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": f"{defs[body.service]['label']} saved.",
+                "data": {
+                    "service": body.service,
+                    "live": clients[body.service] is not None,
+                    "probe": probe,
+                },
+            }
+        )
+
+    @router.delete("/config/services/{service}")
+    async def api_config_delete(service: str):
+        """Drop the file override; fall back to environment; rebuild live."""
+        import asyncio
+        import os
+
+        from arr_mcp.config import ArrServiceConfig
+        from arr_mcp.service_store import build_client, load_store, save_store, service_defs
+
+        if config is None:
+            raise HTTPException(500, "Server started without config.")
+        defs = service_defs()
+        if service not in defs:
+            raise HTTPException(400, f"Unknown service '{service}'.")
+        store = load_store()
+        store.pop(service, None)
+        await asyncio.to_thread(save_store, store)
+        prefix = service.upper()
+        setattr(
+            config,
+            defs[service]["attr"],
+            ArrServiceConfig(
+                url=os.getenv(f"{prefix}_URL", ""),
+                api_key=os.getenv(f"{prefix}_API_KEY", ""),
+                enabled=os.getenv(f"{prefix}_ENABLED", "false").lower() == "true",
+            ),
+        )
+        clients[service] = await asyncio.to_thread(build_client, service, config)
+        return JSONResponse(
+            content={
+                "success": True,
+                "message": f"{defs[service]['label']} override removed (env fallback).",
+                "data": {"service": service, "live": clients[service] is not None},
+            }
+        )
 
     return router

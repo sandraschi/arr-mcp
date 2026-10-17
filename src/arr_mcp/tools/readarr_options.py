@@ -8,8 +8,8 @@ from arr_mcp.constants import TOOL_VERSION
 
 
 def register_readarr_options(mcp, client) -> None:
-    if client is None:
-        return
+    # Always registered: `client` is a LiveClient proxy resolving the
+    # current credentials per call (Settings → Services, no restart).
 
     @mcp.tool(annotations={"readOnlyHint": True, "destructiveHint": False}, version=TOOL_VERSION)
     async def readarr_add_options() -> dict:
@@ -64,5 +64,9 @@ def register_readarr_options(mcp, client) -> None:
                     "monitor_new_books_modes": ["all", "none", "new"],
                 },
             }
-        except Exception:
+        except Exception as e:
+            from arr_mcp.service_store import NotConfiguredError
+
+            if isinstance(e, NotConfiguredError):
+                return {"success": False, "message": str(e), "data": {}}
             return {"success": False, "message": "Could not retrieve Readarr add options", "data": {}}

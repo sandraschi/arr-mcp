@@ -1,8 +1,11 @@
 """Server entry point - imports tools, builds ASGI, starts transport.
 
-Conditionally registers tools for each configured *arr service.
-If a service is not configured, its tools are skipped.
-Auto-discovers services on default ports when an API key is set in .env.
+All service tools are always registered; calls resolve the live client
+through a proxy, so credentials saved in the webapp take effect immediately
+with no restart. Unconfigured services answer with structured failures.
+Service URLs/keys come from ``.env`` overridden by ``config/arr-services.json``
+(managed in Settings → Services). Auto-discovers services on default ports
+when an API key is set.
 """
 
 from __future__ import annotations
@@ -17,22 +20,7 @@ from arr_mcp import __version__
 from arr_mcp.api import create_api_router
 from arr_mcp.app import create_mcp
 from arr_mcp.config import ArrConfig
-from arr_mcp.constants import (
-    BAZARR_DEFAULT_PORT,
-    LIDARR_DEFAULT_PORT,
-    OVERSEERR_DEFAULT_PORT,
-    PROWLARR_DEFAULT_PORT,
-    RADARR_DEFAULT_PORT,
-    READARR_DEFAULT_PORT,
-    SONARR_DEFAULT_PORT,
-)
-from arr_mcp.services.bazarr_service import BazarrClient
-from arr_mcp.services.lidarr_service import LidarrClient
-from arr_mcp.services.overseerr_service import OverseerrClient
-from arr_mcp.services.prowlarr_service import ProwlarrClient
-from arr_mcp.services.radarr_service import RadarrClient
-from arr_mcp.services.readarr_service import ReadarrClient
-from arr_mcp.services.sonarr_service import SonarrClient
+from arr_mcp.service_store import LiveClient, apply_file_overrides, service_defs
 from arr_mcp.tools.agentic import register_agentic_tools
 from arr_mcp.tools.bazarr_tools import register_bazarr_tools
 from arr_mcp.tools.cross_arr_tools import register_cross_arr_tools
@@ -91,36 +79,32 @@ def main() -> None:
     logger.info("arr-mcp v%s starting", __version__)
     logger.info("Auto-discovering *arr services on default ports...")
 
+    file_overrides = apply_file_overrides(config)
+    if file_overrides:
+        logger.info("Service overrides loaded from config/arr-services.json: %s", sorted(file_overrides))
+
     # ── Build service clients (with auto-discovery) ──────────────
 
-    radarr_client = _create_client("Radarr", config.radarr, RADARR_DEFAULT_PORT, RadarrClient, config)
-    sonarr_client = _create_client("Sonarr", config.sonarr, SONARR_DEFAULT_PORT, SonarrClient, config)
-    lidarr_client = _create_client("Lidarr", config.lidarr, LIDARR_DEFAULT_PORT, LidarrClient, config)
-    prowlarr_client = _create_client("Prowlarr", config.prowlarr, PROWLARR_DEFAULT_PORT, ProwlarrClient, config)
-    readarr_client = _create_client("Readarr", config.readarr, READARR_DEFAULT_PORT, ReadarrClient, config)
-    overseerr_client = _create_client("Overseerr", config.overseerr, OVERSEERR_DEFAULT_PORT, OverseerrClient, config)
-    bazarr_client = _create_client("Bazarr", config.bazarr, BAZARR_DEFAULT_PORT, BazarrClient, config)
+    defs = service_defs()
+    clients: dict[str, object] = {}
+    for name, spec in defs.items():
+        svc_config = getattr(config, spec["attr"])
+        clients[name] = _create_client(spec["label"], svc_config, spec["port"], spec["cls"], config)
 
     mcp = create_mcp(config)
 
-    clients: dict[str, object] = {
-        "radarr": radarr_client,
-        "sonarr": sonarr_client,
-        "lidarr": lidarr_client,
-        "prowlarr": prowlarr_client,
-        "readarr": readarr_client,
-        "overseerr": overseerr_client,
-        "bazarr": bazarr_client,
-    }
+    # Live proxies: tools resolve the current client per call, so saving
+    # credentials in the webapp takes effect with no restart.
+    live = {name: LiveClient(clients, name, defs[name]["label"]) for name in defs}
 
-    register_radarr_tools(mcp, radarr_client)
-    register_sonarr_tools(mcp, sonarr_client)
-    register_lidarr_tools(mcp, lidarr_client)
-    register_prowlarr_tools(mcp, prowlarr_client)
-    register_readarr_tools(mcp, readarr_client)
-    register_readarr_options(mcp, readarr_client)
-    register_overseerr_tools(mcp, overseerr_client)
-    register_bazarr_tools(mcp, bazarr_client)
+    register_radarr_tools(mcp, live["radarr"])
+    register_sonarr_tools(mcp, live["sonarr"])
+    register_lidarr_tools(mcp, live["lidarr"])
+    register_prowlarr_tools(mcp, live["prowlarr"])
+    register_readarr_tools(mcp, live["readarr"])
+    register_readarr_options(mcp, live["readarr"])
+    register_overseerr_tools(mcp, live["overseerr"])
+    register_bazarr_tools(mcp, live["bazarr"])
     register_cross_arr_tools(mcp, clients, config)
     register_health_tools(mcp, clients)
     register_help_tools(mcp)
@@ -128,7 +112,7 @@ def main() -> None:
     register_prefab_tools(mcp, clients)
 
     registered_count = sum(1 for c in clients.values() if c is not None)
-    logger.info("Registered tools for %d/%d services", registered_count, len(clients))
+    logger.info("Clients configured for %d/%d services", registered_count, len(clients))
 
     api_router = create_api_router(clients, log_buffer=LOG_BUFFER, config=config)
     run_server(mcp, "arr-mcp", api_router=api_router)
@@ -151,7 +135,7 @@ def _create_client(
         return client_cls(url, svc_config.api_key, arr_config.timeout)
 
     logger.info(
-        "%s not configured - tools will be skipped (port %d unreachable or missing API key)",
+        "%s not configured (port %d unreachable or missing API key) - add it in Settings → Services",
         name,
         default_port,
     )

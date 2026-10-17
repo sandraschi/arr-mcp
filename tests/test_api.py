@@ -177,6 +177,74 @@ class TestApiRouter:
         assert "bazarr" in body["message"]
 
     @pytest.mark.asyncio
+    async def test_config_services_masks_keys(self, tmp_path, monkeypatch):
+        from arr_mcp.config import ArrConfig
+
+        monkeypatch.setenv("ARR_SERVICES_FILE", str(tmp_path / "services.json"))
+        app = FastAPI()
+        config = ArrConfig()
+        app.include_router(create_api_router({"radarr": None}, config=config))
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+            resp = await http_client.get("/api/config/services")
+            assert resp.status_code == 200
+            items = resp.json()["data"]
+            assert len(items) == 7
+            radarr = next(i for i in items if i["service"] == "radarr")
+            assert radarr["key_set"] is False
+            assert "api_key" not in radarr
+
+    @pytest.mark.asyncio
+    async def test_config_save_and_delete_roundtrip(self, tmp_path, monkeypatch):
+        import json
+
+        from arr_mcp.config import ArrConfig
+
+        monkeypatch.setenv("ARR_SERVICES_FILE", str(tmp_path / "services.json"))
+        app = FastAPI()
+        config = ArrConfig()
+        clients: dict = {"radarr": None}
+        app.include_router(create_api_router(clients, config=config))
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+            resp = await http_client.post(
+                "/api/config/services",
+                json={"service": "radarr", "url": "http://127.0.0.1:9", "api_key": "secret", "enabled": True},
+            )
+            assert resp.status_code == 200
+            body = resp.json()
+            assert body["success"] is True
+            assert body["data"]["live"] is True  # client built (probe fails on closed port)
+            assert body["data"]["probe"]["reachable"] is False
+            saved = json.loads((tmp_path / "services.json").read_text(encoding="utf-8"))
+            assert saved["radarr"]["api_key"] == "secret"
+            assert clients["radarr"] is not None  # live without restart
+
+            resp = await http_client.get("/api/config/services")
+            radarr = next(i for i in resp.json()["data"] if i["service"] == "radarr")
+            assert radarr["source"] == "file"
+            assert radarr["key_set"] is True
+
+            resp = await http_client.delete("/api/config/services/radarr")
+            assert resp.status_code == 200
+            assert clients["radarr"] is None  # env fallback (empty) degrades gracefully
+
+    @pytest.mark.asyncio
+    async def test_config_rejects_unknown_service(self, tmp_path, monkeypatch):
+        from arr_mcp.config import ArrConfig
+
+        monkeypatch.setenv("ARR_SERVICES_FILE", str(tmp_path / "services.json"))
+        app = FastAPI()
+        app.include_router(create_api_router({}, config=ArrConfig()))
+        transport = ASGITransport(app=app)
+        async with AsyncClient(transport=transport, base_url="http://test") as http_client:
+            resp = await http_client.post("/api/config/services", json={"service": "nope"})
+            assert resp.status_code == 400
+            resp = await http_client.post("/api/config/test", json={"service": "nope", "url": "x", "api_key": "y"})
+            assert resp.status_code == 200
+            assert resp.json()["data"]["reachable"] is False
+
+    @pytest.mark.asyncio
     async def test_orchestrator_summary(self, client):
         resp = await client.get("/api/orchestrator/summary")
         assert resp.status_code == 200
