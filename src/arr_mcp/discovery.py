@@ -15,8 +15,23 @@ from __future__ import annotations
 import logging
 import shutil
 import subprocess
+from pathlib import Path
 
 logger = logging.getLogger(__name__)
+
+
+def repo_compose_file() -> str | None:
+    """Absolute path to the repo's docker-compose.yml, if running from source.
+
+    The setup panels render ``docker compose -f <file> up -d <service>`` so the
+    command works from any directory (bare ``docker compose up`` only works
+    when the compose file is in the CWD — the classic "no configuration file
+    provided" trap). Returns None inside packed contexts (MCPB) where no
+    compose file ships.
+    """
+    candidate = Path(__file__).resolve().parents[2] / "docker-compose.yml"
+    return str(candidate) if candidate.is_file() else None
+
 
 # image substring → arr-mcp service key
 IMAGE_TO_SERVICE: dict[str, str] = {

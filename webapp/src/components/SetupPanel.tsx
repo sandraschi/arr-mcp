@@ -6,6 +6,7 @@ export interface ServiceSetup {
 	subtitle: string;
 	default_port: number;
 	compose_service: string;
+	compose_file?: string;
 	image: string;
 	env_keys: string[];
 	key_location: string;
@@ -56,11 +57,15 @@ export default function SetupPanel({
 					</span>
 					<div>
 						<p className="text-zinc-200 text-xs font-medium mb-1">Start {setup.label}</p>
-						<code className="block bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-300 overflow-x-auto">
-							docker compose up -d {setup.compose_service}
+						<code className="block bg-zinc-950 border border-zinc-800 rounded-lg px-3 py-2 text-xs font-mono text-zinc-300 overflow-x-auto whitespace-pre">
+							{setup.compose_file
+								? `docker compose -f ${setup.compose_file} up -d ${setup.compose_service}`
+								: `docker compose up -d ${setup.compose_service}`}
 						</code>
 						<p className="text-xs text-zinc-600 mt-1">
-							…or any install from the Help page (native installers work too).
+							{setup.compose_file
+								? "The -f flag makes it work from any directory (bare compose needs the YAML in front of you)."
+								: "Run from the repo root, where docker-compose.yml lives — or use -f <path-to-yml>."}
 						</p>
 					</div>
 				</li>

@@ -15,7 +15,7 @@ from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse, StreamingResponse
 from pydantic import BaseModel, Field
 
-from arr_mcp.discovery import SERVICE_SETUP, detect_docker_containers, probe_fleet
+from arr_mcp.discovery import SERVICE_SETUP, detect_docker_containers, probe_fleet, repo_compose_file
 
 logger = logging.getLogger(__name__)
 
@@ -112,24 +112,32 @@ async def _forward_llm_chat(provider: str, base_url: str, model: str, messages: 
 
 def _not_configured_payload(service: str) -> dict:
     """200-shape for unconfigured services: no 404s on fresh machines."""
+    setup = dict(SERVICE_SETUP.get(service, {}))
+    compose_file = repo_compose_file()
+    if compose_file:
+        setup["compose_file"] = compose_file
     return {
         "success": True,
         "data": {
             "enabled": False,
             "reason": "not configured",
-            "setup": SERVICE_SETUP.get(service, {}),
+            "setup": setup,
         },
     }
 
 
 def _not_configured_list_payload(service: str, label: str) -> dict:
     """200-shape for unconfigured list endpoints: empty items, never 404."""
+    setup = dict(SERVICE_SETUP.get(service, {}))
+    compose_file = repo_compose_file()
+    if compose_file:
+        setup["compose_file"] = compose_file
     return {
         "success": True,
         "message": f"{label} is not configured",
         "data": [],
         "enabled": False,
-        "setup": SERVICE_SETUP.get(service, {}),
+        "setup": setup,
     }
 
 
