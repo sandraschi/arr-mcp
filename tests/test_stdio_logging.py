@@ -13,9 +13,7 @@ def test_setup_logging_routes_rich_logs_to_stderr_without_stdout(capsys):
     root = logging.getLogger()
     original_handlers = root.handlers[:]
     original_level = root.level
-    watched_loggers = {
-        name: logging.getLogger(name).level for name in ("httpx", "httpcore", "uvicorn")
-    }
+    watched_loggers = {name: logging.getLogger(name).level for name in ("httpx", "httpcore", "uvicorn")}
 
     try:
         root.handlers.clear()

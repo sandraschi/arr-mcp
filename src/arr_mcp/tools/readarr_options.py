@@ -18,6 +18,12 @@ def register_readarr_options(mcp, client) -> None:
         Use the returned paths and IDs when calling readarr_add_book for a new
         author. These are author-level settings; existing authors retain their
         current configuration. This tool does not create tags or change settings.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"root_folders": list, "quality_profiles": list, "metadata_profiles": list, "tags": list}}
+
+        ## Examples
+        readarr_add_options()
         """
         try:
             roots, quality, metadata, tags = await asyncio.gather(
@@ -29,8 +35,13 @@ def register_readarr_options(mcp, client) -> None:
             # Root-folder resources may contain Calibre connection settings.
             # Return only UI choices, never the complete resource.
             root_keys = (
-                "id", "name", "path", "freeSpace", "defaultQualityProfileId",
-                "defaultMetadataProfileId", "defaultTags",
+                "id",
+                "name",
+                "path",
+                "freeSpace",
+                "defaultQualityProfileId",
+                "defaultMetadataProfileId",
+                "defaultTags",
             )
             return {
                 "success": True,
@@ -40,7 +51,16 @@ def register_readarr_options(mcp, client) -> None:
                     "quality_profiles": [{"id": row["id"], "name": row["name"]} for row in quality],
                     "metadata_profiles": [{"id": row["id"], "name": row["name"]} for row in metadata],
                     "tags": [{"id": row["id"], "label": row["label"]} for row in tags],
-                    "monitor_modes": ["specific_book", "all", "future", "missing", "existing", "first", "latest", "none"],
+                    "monitor_modes": [
+                        "specific_book",
+                        "all",
+                        "future",
+                        "missing",
+                        "existing",
+                        "first",
+                        "latest",
+                        "none",
+                    ],
                     "monitor_new_books_modes": ["all", "none", "new"],
                 },
             }

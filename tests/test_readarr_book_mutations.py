@@ -155,11 +155,7 @@ def _tools(client: ReadarrClient) -> tuple[RecordingMCP, dict[str, Callable[...,
 
 
 def _requests(requests: list[httpx.Request], method: str, path: str | None = None) -> list[httpx.Request]:
-    return [
-        request
-        for request in requests
-        if request.method == method and (path is None or request.url.path == path)
-    ]
+    return [request for request in requests if request.method == method and (path is None or request.url.path == path)]
 
 
 class TestReadarrBookMutationRegistration:
@@ -695,9 +691,7 @@ class TestReadarrBulkDeleteBookTool:
 
         assert result["success"] is False
         assert _requests(requests, "DELETE") == []
-        assert "99" in result["message"] or any(
-            item["id"] == 99 for item in result["data"]["preflight_errors"]
-        )
+        assert "99" in result["message"] or any(item["id"] == 99 for item in result["data"]["preflight_errors"])
 
     @pytest.mark.asyncio
     async def test_bulk_deduplicates_ids_and_deletes_sequentially(self, readarr, httpx_mock):

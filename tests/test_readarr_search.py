@@ -83,11 +83,7 @@ def _tools(client: ReadarrClient) -> dict[str, Callable[..., Any]]:
 
 
 def _requests(requests: list[httpx.Request], method: str, path: str | None = None) -> list[httpx.Request]:
-    return [
-        request
-        for request in requests
-        if request.method == method and (path is None or request.url.path == path)
-    ]
+    return [request for request in requests if request.method == method and (path is None or request.url.path == path)]
 
 
 class TestReadarrBookSearchRegistration:
@@ -103,9 +99,7 @@ class TestReadarrBookSearchRegistration:
 
 class TestReadarrBookSearch:
     @pytest.mark.asyncio
-    async def test_search_preflights_exact_book_then_posts_one_book_search_command(
-        self, readarr, httpx_mock
-    ):
+    async def test_search_preflights_exact_book_then_posts_one_book_search_command(self, readarr, httpx_mock):
         command = {"id": 123, "status": "queued", "name": "BookSearch"}
         requests = _mock_readarr_search(httpx_mock, book=_book(), command=command)
         tools = _tools(readarr)
@@ -150,9 +144,7 @@ class TestReadarrBookSearch:
         assert _requests(requests, "POST", f"{API_ROOT}/command") == []
 
     @pytest.mark.asyncio
-    async def test_search_does_not_post_when_preflight_returns_a_different_book_id(
-        self, readarr, httpx_mock
-    ):
+    async def test_search_does_not_post_when_preflight_returns_a_different_book_id(self, readarr, httpx_mock):
         requests = _mock_readarr_search(httpx_mock, book=_book(99))
         tools = _tools(readarr)
 
