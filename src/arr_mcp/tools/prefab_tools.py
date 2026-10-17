@@ -9,6 +9,7 @@ from __future__ import annotations
 import logging
 from typing import Annotated
 
+from prefab_ui.components import Card
 from pydantic import Field
 
 from arr_mcp.constants import TOOL_VERSION
@@ -27,8 +28,9 @@ def register_prefab_tools(mcp, clients: dict) -> None:
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
         version=TOOL_VERSION,
+        app=True,
     )
-    async def arr_health_card() -> dict:
+    async def arr_health_card() -> Card:
         """Show the *arr stack health as a rich Prefab card.
 
         Returns a PrefabApp card showing reachability and version for every
@@ -65,10 +67,11 @@ def register_prefab_tools(mcp, clients: dict) -> None:
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
         version=TOOL_VERSION,
+        app=True,
     )
     async def arr_calendar_card(
         days: Annotated[int, Field(description="Number of days to look ahead.", ge=1, le=90)] = 14,
-    ) -> dict:
+    ) -> Card:
         """Show upcoming releases as a rich Prefab calendar card.
 
         Aggregates upcoming releases from Radarr, Sonarr, Lidarr, and Readarr
@@ -115,8 +118,9 @@ def register_prefab_tools(mcp, clients: dict) -> None:
     @mcp.tool(
         annotations={"readOnlyHint": True, "destructiveHint": False},
         version=TOOL_VERSION,
+        app=True,
     )
-    async def arr_stats_card() -> dict:
+    async def arr_stats_card() -> Card:
         """Show consolidated stack statistics as a rich Prefab card.
 
         Returns a PrefabApp card with media counts and wanted/missing per service.

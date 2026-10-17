@@ -18,7 +18,14 @@ except ImportError:
     from fastmcp.server.context import Context  # legacy fallback
 
 from arr_mcp import __version__
-from arr_mcp.config import ArrConfig, SamplingConfig
+from arr_mcp.config import (
+    ArrConfig,
+    ArrServiceConfig,
+    EmbyConfig,
+    JellyfinConfig,
+    PlexConfig,
+    SamplingConfig,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +112,7 @@ def create_mcp(config: ArrConfig) -> FastMCP:
     def get_config_resource() -> str:
         """Return a summary of configured services."""
         services = []
-        for svc, url in [
+        configured: list[tuple[str, ArrServiceConfig | JellyfinConfig | PlexConfig | EmbyConfig]] = [
             ("Radarr", config.radarr),
             ("Sonarr", config.sonarr),
             ("Lidarr", config.lidarr),
@@ -114,9 +121,10 @@ def create_mcp(config: ArrConfig) -> FastMCP:
             ("Overseerr", config.overseerr),
             ("Bazarr", config.bazarr),
             ("Jellyfin", config.jellyfin),
-        ]:
-            if url.is_configured:
-                services.append(f"{svc} ({url.url})")
+        ]
+        for svc, svc_config in configured:
+            if svc_config.is_configured:
+                services.append(f"{svc} ({svc_config.url})")
         if services:
             return f"arr-mcp v{__version__}\n\nConfigured services:\n" + "\n".join(f"  - {s}" for s in services)
         return f"arr-mcp v{__version__}\n\nNo services configured."

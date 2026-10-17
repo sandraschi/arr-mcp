@@ -87,29 +87,25 @@ def register_agentic_tools(mcp, clients: dict) -> None:
                 "If the client supports sampling, you would orchestrate tool calls here."
             )
 
-            # Try sampling first
+            # Try sampling first (FastMCP 3.4: messages are str/SamplingMessage,
+            # result is a SamplingResult with .text)
             if ctx is not None:
                 try:
                     sample_result = await ctx.sample(
-                        messages=[
-                            {
-                                "role": "system",
-                                "content": "You are arr-mcp's agentic orchestrator. You have access to the entire *arr stack. Respond concisely and helpfully.",
-                            },
-                            {"role": "user", "content": stack_context},
-                        ],
+                        messages=[stack_context],
+                        system_prompt=(
+                            "You are arr-mcp's agentic orchestrator. You have access "
+                            "to the entire *arr stack. Respond concisely and helpfully."
+                        ),
                         max_tokens=1024,
                     )
-                    if sample_result and isinstance(sample_result, dict):
-                        content = sample_result.get("content", "") or sample_result.get("choices", [{}])[0].get(
-                            "message", {}
-                        ).get("content", "")
-                        if content:
-                            return {
-                                "success": True,
-                                "message": "Agentic response via sampling",
-                                "data": {"response": content, "sampling_used": True},
-                            }
+                    content = sample_result.text if sample_result else ""
+                    if content:
+                        return {
+                            "success": True,
+                            "message": "Agentic response via sampling",
+                            "data": {"response": content, "sampling_used": True},
+                        }
                 except Exception as sample_err:
                     logger.debug("Sampling failed, falling back: %s", sample_err)
 

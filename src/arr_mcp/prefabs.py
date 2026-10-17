@@ -3,7 +3,25 @@
 Matches fleet pattern from jellyfin-mcp and plex-mcp.
 """
 
-from prefab_ui.components import Badge, Card, Metric, Row
+from prefab_ui.components import (
+    Badge,
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+    Metric,
+    Row,
+)
+
+
+def _card(title: str, badges: list[Badge], body: list) -> Card:
+    """Assemble a Card with a header (title + badges) and content rows."""
+    return Card(
+        children=[
+            CardHeader(children=[CardTitle(title), *badges]),
+            CardContent(children=body),
+        ]
+    )
 
 
 def build_health_card(health_data: dict[str, dict]) -> Card:
@@ -30,7 +48,7 @@ def build_health_card(health_data: dict[str, dict]) -> Card:
     if reachable == total:
         badges.append(Badge(label="All Systems Go"))
 
-    return Card(children=rows, title="*arr Stack Health", badges=badges)
+    return _card("*arr Stack Health", badges, rows)
 
 
 def build_calendar_card(calendar_data: dict[str, dict]) -> Card:
@@ -60,10 +78,10 @@ def build_calendar_card(calendar_data: dict[str, dict]) -> Card:
             )
 
     total = sum(len(v) for v in data.values())
-    return Card(
-        children=rows[:15],
-        title="Upcoming Releases",
-        badges=[Badge(label=f"{total} items")],
+    return _card(
+        "Upcoming Releases",
+        [Badge(label=f"{total} items")],
+        rows[:15],
     )
 
 
@@ -77,14 +95,14 @@ def build_orchestrate_card(result: dict) -> Card:
     for step in pipeline:
         steps.append(Metric(label=step.replace("_", " ").title(), value="Done"))
 
-    return Card(
-        children=[
+    return _card(
+        "Media Request Pipeline",
+        [Badge(label="Jellyfin" if in_library else "Arr Stack")],
+        [
             Metric(label="Status", value="In Library" if in_library else "Queued"),
             Metric(label="Result", value=result.get("message", "")),
         ]
         + steps,
-        title="Media Request Pipeline",
-        badges=[Badge(label="Jellyfin" if in_library else "Arr Stack")],
     )
 
 
@@ -114,8 +132,8 @@ def build_stats_card(stats_data: dict[str, dict]) -> Card:
     )
     wanted_total = sum(info.get("wanted", 0) for info in data.values() if info.get("enabled"))
 
-    return Card(
-        children=rows,
-        title="*arr Stack Statistics",
-        badges=[Badge(label=f"{items_total} items"), Badge(label=f"{wanted_total} wanted")],
+    return _card(
+        "*arr Stack Statistics",
+        [Badge(label=f"{items_total} items"), Badge(label=f"{wanted_total} wanted")],
+        rows,
     )

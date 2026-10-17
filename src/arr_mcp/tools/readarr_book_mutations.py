@@ -58,9 +58,7 @@ def _monitored_edition(book: dict[str, Any]) -> tuple[dict[str, Any] | None, str
     if not isinstance(editions, list):
         return None, "exact Readarr lookup result has no foreign edition identity; refusing add"
     monitored_editions = [
-        edition
-        for edition in editions
-        if isinstance(edition, dict) and edition.get("monitored") is True
+        edition for edition in editions if isinstance(edition, dict) and edition.get("monitored") is True
     ]
     if not monitored_editions:
         return None, "exact Readarr lookup result has no monitored edition; refusing add"
@@ -135,11 +133,7 @@ async def _find_duplicate(client: Any, foreign_book_id: str) -> dict[str, Any] |
         # Keep lightweight test doubles and older client shims usable.
         books = await client.get_books()
     return next(
-        (
-            book
-            for book in books
-            if isinstance(book, dict) and book.get("foreignBookId") == foreign_book_id
-        ),
+        (book for book in books if isinstance(book, dict) and book.get("foreignBookId") == foreign_book_id),
         None,
     )
 
@@ -221,9 +215,7 @@ async def _select_lookup_book(
     """Resolve one exact book, enriching incomplete lookup data when needed."""
     selected = await client.lookup_book(f"work:{foreign_book_id}")
     matches = [
-        result
-        for result in selected
-        if isinstance(result, dict) and result.get("foreignBookId") == foreign_book_id
+        result for result in selected if isinstance(result, dict) and result.get("foreignBookId") == foreign_book_id
     ]
     if not matches:
         return None, f"No exact Readarr lookup result for foreign_book_id '{foreign_book_id}'"
@@ -305,14 +297,15 @@ def register_readarr_book_mutation_tools(mcp, client) -> None:
             MonitorNewBooksMode,
             Field(description="New-author monitoring for future books: all, none, or new."),
         ] = "none",
-        tags: Annotated[
-            list[StrictInt], Field(description="Existing Readarr tag IDs for a new author.")
-        ] = [],  # noqa: B006 - the list is read-only and MCP supplies fresh arguments
+        tags: Annotated[list[StrictInt], Field(description="Existing Readarr tag IDs for a new author.")] = [],  # noqa: B006 - the list is read-only and MCP supplies fresh arguments
         # Retained as compatibility aliases for callers of the earlier tool
         # contract. New callers should use monitor/monitor_new_books.
         monitored: Annotated[bool, Field(description="Whether the requested book is monitored.")] = True,
         search_for_new_book: Annotated[
-            bool, Field(description="Set true to start Readarr's native download search immediately after adding this book. Defaults false.")
+            bool,
+            Field(
+                description="Set true to start Readarr's native download search immediately after adding this book. Defaults false."
+            ),
         ] = False,
     ) -> dict[str, Any]:
         """Add exactly one Readarr book using an exact lookup edition.
@@ -324,6 +317,13 @@ def register_readarr_book_mutation_tools(mcp, client) -> None:
         Readarr's native addOptions.searchForNewBook. A matching release may
         be downloaded using the author's quality profile. This does not enable
         searching the author's other books.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"book_id": int, "title": str}}
+
+        ## Examples
+        readarr_add_book(foreign_book_id="12345", author_id=7)
+        readarr_add_book(foreign_book_id="12345", foreign_author_id="6789", quality_profile_id=1, metadata_profile_id=1, root_folder_path="D:/Books")
         """
         try:
             if not isinstance(foreign_book_id, str) or not foreign_book_id.strip():
@@ -331,9 +331,7 @@ def register_readarr_book_mutation_tools(mcp, client) -> None:
             if monitor not in MONITOR_MODES:
                 return _failure(f"monitor must be one of: {', '.join(MONITOR_MODES)}")
             if monitor_new_books not in MONITOR_NEW_BOOK_MODES:
-                return _failure(
-                    f"monitor_new_books must be one of: {', '.join(MONITOR_NEW_BOOK_MODES)}"
-                )
+                return _failure(f"monitor_new_books must be one of: {', '.join(MONITOR_NEW_BOOK_MODES)}")
             if not isinstance(tags, list) or any(not _positive_int(tag) for tag in tags):
                 return _failure("tags must contain only positive exact Readarr tag IDs")
             if author_id is not None and not _positive_int(author_id):
@@ -433,7 +431,11 @@ def register_readarr_book_mutation_tools(mcp, client) -> None:
                 search_for_new_book=search_for_new_book,
                 editions=[selected_edition],
             )
-            return {"success": True, "message": f"Added Readarr book '{selected_book.get('title', foreign_book_id)}'", "data": data}
+            return {
+                "success": True,
+                "message": f"Added Readarr book '{selected_book.get('title', foreign_book_id)}'",
+                "data": data,
+            }
         except Exception as exc:
             logger.exception("readarr_add_book failed: %s", exc)
             return _failure(str(exc))
@@ -444,7 +446,9 @@ def register_readarr_book_mutation_tools(mcp, client) -> None:
     )
     async def readarr_delete_book(
         book_id: Annotated[StrictInt, Field(gt=0, description="Positive exact Readarr book ID.")],
-        dry_run: Annotated[bool, Field(description="Preview the book and files without deleting. Defaults true.")] = True,
+        dry_run: Annotated[
+            bool, Field(description="Preview the book and files without deleting. Defaults true.")
+        ] = True,
         delete_files: Annotated[bool, Field(description="Also delete files from disk.")] = False,
         confirm_delete_files: Annotated[
             bool, Field(description="Required confirmation when delete_files=true.")
@@ -453,7 +457,15 @@ def register_readarr_book_mutation_tools(mcp, client) -> None:
             bool, Field(description="Add an import-list exclusion for this book.")
         ] = False,
     ) -> dict[str, Any]:
-        """Preview or delete one Readarr book; never deletes its author."""
+        """Preview or delete one Readarr book; never deletes its author.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"dry_run": bool, "preview": dict}}
+
+        ## Examples
+        readarr_delete_book(book_id=99)
+        readarr_delete_book(book_id=99, dry_run=False)
+        """
         try:
             if not _positive_int(book_id):
                 return _failure("book_id must be a positive exact Readarr book ID")
@@ -502,6 +514,13 @@ def register_readarr_book_mutation_tools(mcp, client) -> None:
 
         Every ID is preflighted before the first mutation. A later delete
         failure stops the sequence and reports IDs that were not attempted.
+
+        ## Return Format
+        {"success": bool, "message": str, "data": {"deleted": list, "failed": list, "not_attempted": list}}
+
+        ## Examples
+        readarr_delete_books(book_ids=[1, 2, 3])
+        readarr_delete_books(book_ids=[1, 2], dry_run=False)
         """
         try:
             if not isinstance(book_ids, list):
