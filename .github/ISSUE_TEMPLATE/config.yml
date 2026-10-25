@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and help (GitHub Discussions Q&A)
+    url: https://github.com/sandraschi/arr-mcp/discussions
+    about: Not a bug or feature? Ask here instead of filing an issue.
+  - name: Security-sensitive report (private)
+    url: https://github.com/sandraschi/arr-mcp/security/advisories/new
+    about: Credentials, private data, vulnerabilities — never file these publicly.
