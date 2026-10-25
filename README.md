@@ -200,6 +200,15 @@ The `arr-mcp` service builds `Dockerfile` (uv, locked deps) with
 Point MCP clients at `http://HOST:10938/mcp`. See `docs/TROUBLESHOOTING.md`
 for container networking notes (use compose service names, not `localhost`).
 
+## Bugs
+
+Bug reports and feature requests go to [GitHub Issues](../../issues) using the
+issue forms (a bug report needs version + reproducer, no exceptions).
+GitHub is also where PRs happen; questions belong in
+[Discussions](../../discussions). Never post secrets or API keys — redact and
+rotate first; security-sensitive reports go through a
+[private advisory](../../security/advisories/new).
+
 ## License
 
 MIT

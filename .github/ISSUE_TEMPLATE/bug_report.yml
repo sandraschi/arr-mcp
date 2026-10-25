@@ -1,0 +1,55 @@
+# ROUTING: bugs and feature requests live HERE (issue forms). Questions and
+# help requests belong in GitHub Discussions (Q&A). Security-sensitive reports
+# (credentials, private data) must NEVER be filed publicly — see the checkbox.
+name: Bug report
+description: Something does not work — file with a reproducer
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting. **Search existing issues first** — duplicates get closed.
+        Questions and help requests belong in Discussions, not here.
+        If your report contains secrets, credentials, or private data: STOP — redact or rotate them first (see the checkbox at the bottom).
+  - type: input
+    id: version
+    attributes:
+      label: Repo version / commit
+      placeholder: e.g. commit hash (`git rev-parse --short HEAD`) or release tag
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: OS, MCP host (Claude Desktop / opencode / ...), how the server runs (uv / start.ps1 / --serve port)
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Called <arr tool, e.g. arr_agentic> with operation ... / params ...
+        2. Observed ... (paste exact error or receipt text).
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected vs actual
+      placeholder: What you expected to happen, and what happened instead (paste exact error text).
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Logs / config / screenshot
+      description: Paste the relevant excerpt (tool receipt, backend log). REDACT secrets first — never attach live credentials or API keys.
+  - type: checkboxes
+    id: private
+    attributes:
+      label: Private data check
+      options:
+        - label: This report contains no secrets, credentials, or other people's private data (if it does, redact and rotate first — do not file publicly)
+          required: true

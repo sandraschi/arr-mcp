@@ -1,0 +1,36 @@
+# One request per issue, so each can be accepted or rejected on its own.
+# Major changes need maintainer pre-approval (link it below) — undiscussed
+# large PRs stall.
+name: Feature request
+description: A service, operation, or capability you want
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. **Search existing issues first** — one request per issue, so each can be accepted or rejected on its own.
+  - type: input
+    id: summary
+    attributes:
+      label: One-line summary
+      placeholder: e.g. Cross-arr queue balancing operation
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve? (your use case)
+      placeholder: Concrete situation, not a solution. Which *arr service are you driving, doing what?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior (optional)
+      description: Tool name, inputs, outputs. Homework here gets things built faster.
+  - type: input
+    id: discussed
+    attributes:
+      label: Discussed anywhere already?
+      description: Link a discussion, chat thread, or prior issue. Major changes need maintainer pre-approval before a PR — undiscussed large PRs stall.
+      placeholder: e.g. discussion #12, or "no"
